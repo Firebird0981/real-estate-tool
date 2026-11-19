@@ -1622,6 +1622,27 @@ let searchLevel = "county";
 
 // ================= HELPERS =================
 const $ = id => document.getElementById(id);
+// ---- money boxes show thousands separators as you type (1,250,000). The page still reads plain numbers from them.
+(function(){
+  const IDS = ["b-inc","b-debt","b-cash","b-price","f-budget","f-cash","mapInc","z-max","d-price","d-rent","d-sqft","d-rehab","d-arv","d-inc","d-debt","d-myrent","d-ins","d-hoa","d-assess","d-flood","d-supp","d-util","d-cfee","d-ccost","d-adr"];
+  const nat = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+  const fmt = v => { v = String(v==null ? "" : v).replace(/[^0-9.\-]/g, ""); const neg = v[0]==="-"; v = v.replace(/-/g,""); const i = v.indexOf("."); let ip = i<0 ? v : v.slice(0,i), fp = i<0 ? "" : "."+v.slice(i+1).replace(/\./g,""); return (neg?"-":"") + ip.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + fp; };
+  IDS.forEach(id=>{
+    const el = document.getElementById(id); if (!el) return;
+    const cur = nat.get.call(el);
+    el.type = "text"; el.inputMode = "decimal"; el.autocomplete = "off";
+    Object.defineProperty(el, "value", { configurable:true, get(){ return nat.get.call(this).replace(/,/g,""); }, set(v){ nat.set.call(this, fmt(v)); } });
+    nat.set.call(el, fmt(cur));
+    el.addEventListener("input", ()=>{
+      const raw = nat.get.call(el), pos = el.selectionStart == null ? raw.length : el.selectionStart;
+      const keep = raw.slice(0, pos).replace(/[^0-9.\-]/g, "").length, out = fmt(raw);
+      if (out === raw) return;
+      nat.set.call(el, out);
+      let n = 0, np = out.length; if (keep === 0) np = 0; else for (let k=0;k<out.length;k++){ if (/[0-9.\-]/.test(out[k])) n++; if (n===keep){ np = k+1; break; } }
+      try{ el.setSelectionRange(np, np); }catch(e){}
+    });
+  });
+})();
 const fmt$ = v => (v<0?"-":"")+"$"+Math.round(Math.abs(v)).toLocaleString();
 const fmtK = v => (v<0?"-":"")+"$"+(Math.abs(v)>=1e6?(Math.abs(v)/1e6).toFixed(2)+"M":Math.round(Math.abs(v)/1000)+"k");
 const pct = (v,d=1) => isFinite(v) ? (v*100).toFixed(d)+"%" : "∞";
