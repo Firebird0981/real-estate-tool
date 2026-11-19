@@ -195,7 +195,7 @@ header.top{max-width:1100px;margin:0 auto;padding:22px 16px 18px;display:grid;gr
 .lede{grid-column:1/-1;font:700 clamp(26px,4.2vw,40px)/1.12 var(--ui);letter-spacing:-.022em;margin:18px 0 4px;max-width:21ch;text-wrap:balance}
 .sub{grid-column:1/-1;font-size:16px;color:var(--muted);max-width:62ch;margin:0}
 #updatedLine{grid-column:1/-1;margin:2px 0 0}
-.switch{display:inline-flex;align-items:center;gap:8px;font:600 13.5px var(--ui);color:var(--ink);cursor:pointer;background:var(--card);border:1px solid var(--line2);padding:6px 12px 6px 6px;border-radius:999px;margin:0}
+.switch{white-space:nowrap;display:inline-flex;align-items:center;gap:8px;font:600 13.5px var(--ui);color:var(--ink);cursor:pointer;background:var(--card);border:1px solid var(--line2);padding:6px 12px 6px 6px;border-radius:999px;margin:0}
 .switch input[type=checkbox]{appearance:none;-webkit-appearance:none;width:34px;height:20px;margin:0;padding:0;border-radius:999px;background:var(--line2);border:0;position:relative;cursor:pointer;transition:background .15s}
 .switch input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s}
 .switch input[type=checkbox]:checked{background:var(--accent)}
@@ -605,7 +605,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
   header.top .switch{font-size:13px;white-space:nowrap;padding:6px 10px}
   header.top .brand{font-size:16px;gap:8px}header.top .brand svg{width:32px;height:32px}
 }
-@media(max-width:400px){header.top .switch{white-space:normal;max-width:118px;line-height:1.2}}
+@media(max-width:400px){header.top .switch{white-space:nowrap;line-height:1.2}header.top .switch .sw-more{display:none}}
 @media(max-width:350px){header.top{grid-template-columns:minmax(0,1fr)!important}header.top .hdr-actions{grid-column:1!important;justify-self:start!important}header.top .switch{max-width:none;white-space:nowrap}}
 /* v23 usability */
 details.fine{margin:14px 0;border:1px solid var(--line);border-radius:12px;background:var(--card)}
@@ -640,6 +640,29 @@ body[data-aud="buyer"] :is(#hdrSubscribe,#leadInline,#ftSubscribe){display:none!
 #hdrSubscribe,#leadInline,#ftSubscribe,#leadModal{display:none!important}
 /* saved homes paused: hide the tab and every way to save/open it (remove this rule to bring it back) */
 #tabs button[data-v="saved"],#saveDeal,[data-go="saved"]{display:none!important}
+/* buyers: hide the loan-fee jargon behind "More loan options" */
+body[data-aud="buyer"]:not(.show-badv) .bhide{display:none!important}
+.linkbtn{background:none;border:0;padding:6px 0;color:var(--accent);font:600 14px var(--ui);text-decoration:underline;cursor:pointer}
+/* price box: show a hint instead of the made-up $550,000 until the buyer types */
+label.pricelbl{position:relative}
+.pricehint{display:none;position:absolute;left:12px;bottom:11px;color:var(--muted);font-size:16px;pointer-events:none}
+body.deal-empty[data-aud="buyer"] label.pricelbl .pricehint{display:block}
+body.deal-empty[data-aud="buyer"] #d-price{color:transparent}
+/* ZIP explorer on a phone: drop the County column for buyers (the area name already says it) */
+@media(max-width:640px){body[data-aud="buyer"] #zTable :is(th,td):nth-child(2){display:none}}
+/* map: keep zoom buttons narrow so the legend never covers them; put the map right under the income box on phones */
+.zoomctl{width:46px}.zoomctl button{width:46px;min-width:46px;padding:0}#zReset{font-size:11px;line-height:1.1}
+@media (max-width:860px){
+  #v-map>.card{display:flex;flex-direction:column}
+  #v-map .mapfindrow{order:5}#v-map .mapgrid{order:4}#v-map .maphint{order:6}#v-map>.card>.note{order:7}
+}
+/* cash-saved line */
+.cashline{margin:8px 0 0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:14px;line-height:1.5}
+.cashline.w{border-color:#c97a00;background:color-mix(in srgb,#c97a00 10%,var(--card))}
+/* Help & data sub-tabs */
+.helpnav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.helpnav button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:999px;font:600 13.5px var(--ui);cursor:pointer}
+.helpnav button.on{background:var(--accent);border-color:var(--accent);color:var(--onacc)}
 /* v52: buyer verdict card (built from the summary text the buyer ranking already writes) */
 #buyerSummary.has-verdict51>*:not(.verdict51){display:none}
 .verdict51{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:12px}
@@ -712,7 +735,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <header class="top">
   <div class="brand"><svg viewBox="0 0 40 40" width="38" height="38" aria-hidden="true"><rect width="40" height="40" rx="10" fill="var(--accent)"/><path d="M9 21 20 11l11 10" fill="none" stroke="var(--onacc)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="13" y="24" width="3.6" height="7" rx="1" fill="var(--onacc)"/><rect x="18.2" y="21" width="3.6" height="10" rx="1" fill="var(--onacc)"/><rect x="23.4" y="18" width="3.6" height="13" rx="1" fill="var(--onacc)"/></svg><h1>Garden State Yield</h1></div>
   <div class="hdr-actions">
-    <label class="switch" title="Plain-English explanations, fewer inputs"><input type="checkbox" id="simpleT"> Explain as I go</label>
+    <label class="switch" title="Plain-English explanations, fewer inputs"><input type="checkbox" id="simpleT"> Explain<span class="sw-more"> as I go</span></label>
     <button class="btn sm" id="hdrSubscribe">Free monthly report</button>
   </div>
   <div class="hero-copy">
@@ -744,9 +767,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   <button data-v="compare" class="adv">Compare</button>
   <button data-v="deal">Check a home</button>
   <button data-v="saved">Saved homes <span id="savedCount"></span></button>
-  <button data-v="resources">Resources</button>
-  <button data-v="learn">Word help</button>
-  <button data-v="data" class="adv">Sources</button>
+  <button data-v="learn">Help &amp; data</button>
 </div></nav>
 <main>
 
@@ -899,8 +920,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="grid">
       <label>Search town or ZIP<input id="z-q" placeholder="e.g. Rahway or 0706"></label>
       <label>County<select id="z-county"><option value="">All counties</option></select></label>
-      <label>Property type<select id="z-type"><option value="sfh">Single-family house</option><option value="mf24">2–4 unit (3 × 2BR)</option><option value="condo">Condo (2BR)</option></select></label>
-      <label id="z-beds-l">Bedrooms (house)<select id="z-beds"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option></select></label>
+      <label>Property type<select id="z-type"><option value="sfh">Single-family house</option><option value="mf24">2–4 family home</option><option value="condo">Condo (2BR)</option></select></label>
+      <label id="z-beds-l">Bedrooms<select id="z-beds"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option></select></label>
       <label>Sort by<select id="z-sort">
         <option value="cf">Est. cash flow (best first)</option>
         <option value="hy">Section 8 rent yield (best first)</option>
@@ -983,11 +1004,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="grid">
       <label>ZIP code (optional)<input id="d-zip" inputmode="numeric" maxlength="5" placeholder="e.g. 08861"></label>
       <label>County / town<select id="d-county"></select></label>
-      <label>Purchase price ($)<input id="d-price" type="number" value="550000" step="5000"></label>
+      <label class="pricelbl">Purchase price ($)<input id="d-price" type="number" value="550000" step="5000"><span class="pricehint">e.g. 450000</span></label>
       <label class="mode-only" data-modes="rental househack brrrr">Units<input id="d-units" type="number" value="2" min="1"></label>
       <label class="mode-only" data-modes="rental househack brrrr">Bedrooms per unit<select id="d-beds"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select></label>
       <label class="mode-only" data-modes="rental househack brrrr">Rent per unit / mo ($)<input id="d-rent" type="number" value="2400" step="50"></label>
-      <label>Living area (sq ft)<input id="d-sqft" type="number" value="0" step="50" placeholder="for comps"></label>
+      <label class="bhide">Living area (sq ft)<input id="d-sqft" type="number" value="0" step="50" placeholder="for comps"></label>
       <label class="mode-only" data-modes="brrrr flip">Rehab budget ($)<input id="d-rehab" type="number" value="60000" step="5000"></label>
       <label class="mode-only" data-modes="brrrr flip">After-repair value, ARV ($)<input id="d-arv" type="number" value="700000" step="5000"></label>
       <label class="mode-only" data-modes="brrrr flip">Rehab + hold time (months)<input id="d-months" type="number" value="5" step="1"></label>
@@ -1003,11 +1024,12 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       <div class="grid">
         <label class="mode-only" data-modes="own">Household income / yr ($)<input id="d-inc" type="number" value="0" step="5000" placeholder="e.g. 120000"></label>
         <label class="mode-only" data-modes="own">Other monthly debt payments ($)<input id="d-debt" type="number" value="0" step="50" placeholder="car, cards, student loans"></label>
-        <label>Loan type<select id="d-loan"><option value="fha">FHA — 3.5% down</option><option value="conv">Conventional — 5% down</option><option value="va">VA — 0% down</option></select></label>
-        <label>Mortgage insurance (% of loan / yr)<input id="d-mi" type="number" value="0.55" step="0.05"></label>
-        <label>Upfront loan fee, added to loan (%)<input id="d-uf" type="number" value="1.75" step="0.05"></label>
-        <label>What you pay in rent now / mo ($)<input id="d-myrent" type="number" value="2200" step="50"></label>
+        <label>Loan type<select id="d-loan"><option value="fha">FHA: 3.5% down, easier to qualify</option><option value="conv">Conventional: 5% down</option><option value="va">VA: 0% down, for veterans and service members</option></select></label>
+        <label class="bhide">Mortgage insurance (% of loan / yr)<input id="d-mi" type="number" value="0.55" step="0.05"></label>
+        <label class="bhide">Upfront loan fee, added to loan (%)<input id="d-uf" type="number" value="1.75" step="0.05"></label>
+        <label class="bhide">What you pay in rent now / mo ($, optional)<input id="d-myrent" type="number" value="2200" step="50"></label>
       </div>
+      <p class="buy-only" style="margin:8px 0 0"><button type="button" class="linkbtn" id="badvBtn" aria-expanded="false">More loan options ▾</button></p>
       <p class="note mode-only" data-modes="househack" style="margin-top:8px">Enter <b>rent per unit</b> as each unit's market rent, including the one you'll live in. FHA charges 1.75% upfront plus 0.55% a year; a 3–4 unit building must also pass FHA's self-sufficiency test (75% of all units' rent must cover the full payment). Conventional 2–4 unit loans allow 5% down with private mortgage insurance (the 0.5%–1% a year depends on credit). VA loans have no down payment and a funding fee (about 2.15% on first use). You must live there at least a year. Check your county's FHA loan limit: <a href="https://entp.hud.gov/idapp/html/hicostlook.cfm" target="_blank" rel="noopener">HUD loan limits ↗</a></p>
     </div>
     <div class="mode-only" data-modes="str">
@@ -1045,13 +1067,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="grid">
       <label class="mode-only" data-modes="rental househack str own">Down payment (%)<input id="d-down" type="number" value="25" step="1"></label>
       <label class="mode-only" data-modes="rental househack str own">Interest rate (%)<input id="d-rate" type="number" value="7.5" step="0.125"></label>
-      <label class="mode-only" data-modes="rental househack str own">Loan length (years)<input id="d-term" type="number" value="30" min="5" max="40" step="5"></label>
+      <label class="mode-only bhide" data-modes="rental househack str own">Loan length (years)<input id="d-term" type="number" value="30" min="5" max="40" step="5"></label>
       <label class="mode-only" data-modes="brrrr flip">Rehab loan covers (% of price + rehab)<input id="d-hmltv" type="number" value="85" step="5"></label>
       <label class="mode-only" data-modes="brrrr flip">Rehab loan rate (%)<input id="d-hmrate" type="number" value="11" step="0.25"></label>
       <label class="mode-only" data-modes="brrrr">Refinance LTV (% of ARV)<input id="d-refiltv" type="number" value="75" step="5"></label>
       <label class="mode-only" data-modes="brrrr">Refinance rate (%)<input id="d-refirate" type="number" value="7.5" step="0.125"></label>
       <label class="mode-only" data-modes="brrrr">Refinance length (years)<input id="d-term2" type="number" value="30" min="5" max="40" step="5"></label>
-      <label>Purchase closing costs (%)<input id="d-close" type="number" value="3" step="0.5"></label>
+      <label class="bhide">Purchase closing costs (%)<input id="d-close" type="number" value="3" step="0.5"></label>
     </div>
     <div class="mode-only" data-modes="rental househack brrrr str own">
       <details class="fine" id="fineYears"><summary><span class="n">4</span><span><b>Over the years</b><small>Price growth, rent growth and how long you'll hold. Tap to change.</small></span></summary>
@@ -1176,6 +1198,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <!-- GLOSSARY -->
 <section class="view" id="v-resources">
+<div class="helpnav" role="tablist" aria-label="Help and data"><button data-v="learn">Glossary</button><button data-v="resources">Free resources</button><button data-v="data">Data sources</button></div>
   <div class="card vs-intro">
     <span class="eyebrow dark">Free resources</span>
     <h2>Everything you need along the way, in one place</h2>
@@ -1188,6 +1211,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </section>
 
 <section class="view" id="v-learn">
+<div class="helpnav" role="tablist" aria-label="Help and data"><button data-v="learn">Glossary</button><button data-v="resources">Free resources</button><button data-v="data">Data sources</button></div>
   <div class="card">
     <h2>Real estate glossary</h2>
     <p class="hint">Plain-English definitions of the terms investors use, with examples, rules of thumb and the New Jersey rules that trip up new landlords. Tap the <span class="q" style="pointer-events:none">?</span> next to any number in the tool to see its definition.</p>
@@ -1242,6 +1266,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <!-- DATA -->
 <section class="view" id="v-data">
+<div class="helpnav" role="tablist" aria-label="Help and data"><button data-v="learn">Glossary</button><button data-v="resources">Free resources</button><button data-v="data">Data sources</button></div>
   <div class="card">
     <h2>Add a town</h2>
     <p class="hint">Counties are averages — the real action is town by town. Add towns you're targeting with numbers from Zillow, Redfin, the MLS or NJ State Police crime reports. They join the rankings and comparisons. For ~50 towns in the FBI's 2024 safest / most-dangerous NJ lists (e.g. Newark, Jersey City, Paterson, Trenton, Elizabeth, Randolph, Tenafly), crime fills in automatically.</p>
@@ -2314,7 +2339,7 @@ function marketTake(c){
 }
 
 // ================= ZIP EXPLORER =================
-let zShow = 60; var zSortTouched = false;
+let zShow = 60; var zSortTouched = false, zMaxTouched = false;
 var dealPicked = false, dealTyped = false, lastCarry = {};
 // buyers: bring income, debts and a price from "Where to buy" into "Check a home" (without overwriting what they typed here)
 
@@ -2340,6 +2365,7 @@ function syncDealEmpty(){
   document.body.classList.toggle("deal-empty", !!empty);
 }
 function renderZips(){
+  try{ if (AUD==="buyer" && !zMaxTouched && document.activeElement!==$("z-max")) syncZipBuyer(); }catch(e){}
   const q = $("z-q").value.trim().toLowerCase(), cty = $("z-county").value, tk = $("z-type").value, srt = $("z-sort").value, mx = +$("z-max").value || Infinity;
   const bd = +$("z-beds").value || 3; $("z-beds-l").style.display = tk==="sfh" ? "" : "none";
   const f = {...getF()}, t0 = TYPES.find(x=>x.k===tk), t = tk==="sfh" && bd!==3 ? {...t0, beds:bd, ...SFH_BEDS[bd]} : t0;
@@ -2347,7 +2373,7 @@ function renderZips(){
     .map(z => { const u = underwrite(z, t, f); const hud = typeRent(z, t, "s8"); return {z, u, hy: hud*12/u.price, safe: safety(z)}; });
   const key = {cf:r=>-r.u.cf, hy:r=>-r.hy, v1:r=>r.z.price, v2:r=>-r.z.price, g:r=>-r.z.yoy, t:r=>r.z.tax, s:r=>-r.safe}[srt];
   rows.sort((a,b)=>key(a)-key(b));
-  $("z-count").textContent = `${rows.length} ZIP codes match${tk==="sfh"?` · ${bd}-bedroom house`:""}${AUD==="buyer"?"":` · cash flow assumes ${f.down}% down at ${f.rate}% and ${f.basis==="s8"?"Section 8 (HUD) rents":"estimated market rents"}`}`;
+  $("z-count").textContent = `${rows.length} ZIP codes match${tk==="sfh"?` · ${bd}-bedroom house`:""}${AUD==="buyer" ? (isFinite(mx) && !zMaxTouched ? ` · typical price up to ${fmt$(mx)}, what fits your income. Clear Max price to see every town.` : "") : ` · cash flow assumes ${f.down}% down at ${f.rate}% and ${f.basis==="s8"?"Section 8 (HUD) rents":"estimated market rents"}`}`;
   $("zTable").innerHTML = `<thead><tr><th>Area · ZIP</th><th>County</th><th>Est. price</th><th title="Change in the ZIP's typical home value over the past 12 months (Zillow)">Price change, 1 yr</th><th>Typical rent</th><th>HUD 2BR · 3BR</th><th>Sec 8 yield${gq("s8yield")}</th><th>Tax${gq("efftax")}</th><th>Violent /1k</th><th>Cash flow /mo</th><th></th></tr></thead>
   <tbody>${rows.slice(0,zShow).map(({z,u,hy})=>`<tr>
     <td><b>${z.area}</b> <span class="note">${z.zip}</span>${z.rcInfo&&!z.rcInfo.legacy?` <span class="pill w" title="${z.rcInfo.town}: ${z.rcInfo.rule}">Rent ctrl</span>`:""}</td><td>${z.county}</td>
@@ -2768,7 +2794,7 @@ function renderOwnVerdict(d, o, a){
     ${gauge}
     <div class="ov-sent">${sent}</div>
     <div><div class="ov-eyebrow">WHERE THE ${fmt$(o.total)} GOES EACH MONTH</div><div class="ov-bar">${bar}</div>${leg}</div>
-    <div class="ov-cash"><div class="ov-eyebrow">CASH NEEDED UP FRONT</div><div class="n">${fmt$(o.downAmt+o.closeAmt)}</div><div class="d">${fmt$(o.downAmt)} down payment (${d.down}%) plus about ${fmt$(o.closeAmt)} in closing costs.</div></div>
+    <div class="ov-cash"><div class="ov-eyebrow">CASH NEEDED UP FRONT</div><div class="n">${fmt$(o.downAmt+o.closeAmt)}</div><div class="d">${fmt$(o.downAmt)} down payment (${d.down}%) plus about ${fmt$(o.closeAmt)} in closing costs.${(()=>{ const sv = AUD==="buyer" && $("b-cash") ? (+$("b-cash").value||0) : 0, need = o.downAmt+o.closeAmt; return sv>0 ? (sv>=need ? ` <b>You have ${fmt$(sv)} saved, enough with ${fmt$(sv-need)} to spare.</b>` : ` <b>You have ${fmt$(sv)} saved, about ${fmt$(need-sv)} short.</b>`) : ""; })()}</div></div>
     <div class="ov-note">Estimates from public data, not listings or advice. A lender decides what you actually qualify for.</div>`;
 }
 function renderOwn(d){
@@ -3333,9 +3359,20 @@ function fillCountySelects(){
   $("d-county").value = cur && findPlace(cur) ? cur : "Middlesex";
   if (!$("t-county").options.length) $("t-county").innerHTML = DATA.map(c=>`<option>${c.c}</option>`).join("");
 }
+function syncZipBuyer(){
+  if (AUD!=="buyer" || zMaxTouched) return;
+  const b = readBuyer(), z = $("z-max");
+  if (!(b.inc>0)){ z.value = ""; return; }
+  const taxes = ZIPP.map(x=>x.tax).sort((x,y)=>x-y), medTax = taxes[Math.floor(taxes.length/2)];
+  const cp = ownMaxPrice(buyerD({price:500000, tax:medTax, flood:0}, {...b, price:0}), b.inc/12);
+  z.value = Math.max(50000, Math.floor(cp/5000)*5000);
+}
 function showView(v){
+  if (v==="zips"){ try{ syncZipBuyer(); renderZips(); }catch(e){ console.warn(e); } }
   if (v==="deal" && AUD==="buyer"){ try{ if (dealMode!=="own"){ const ob=document.querySelector('#dealMode button[data-m="own"]'); if (ob) ob.click(); } carryBuyerInputs(); renderDeal(); }catch(e){ console.warn(e); } }
-  document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.v===v));
+  const navV = (v==="resources"||v==="data") ? "learn" : v;
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.v===navV));
+  document.querySelectorAll(".helpnav button").forEach(x=>x.classList.toggle("on",x.dataset.v===v));
   document.querySelectorAll("section.view").forEach(s=>s.classList.toggle("on",s.id==="v-"+v));
   try{history.replaceState(null,"","#"+v)}catch(e){}
   document.body.classList.toggle("nf", v!=="find");
@@ -3346,7 +3383,7 @@ function showView(v){
   else window.scrollTo({top:0});
   if (v==="map" && typeof fitAll==="function" && mapBuilt) requestAnimationFrame(()=>{ if (MAPFIT) fitAll(); else setVB([...mapVB]); });
 }
-document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>showView(b.dataset.v));
+document.querySelectorAll("#tabs button, .helpnav button").forEach(b=>b.onclick=()=>showView(b.dataset.v));
 window.addEventListener("hashchange", ()=>{ const h=location.hash.slice(1); if ($("v-"+h)) showView(h); });
 document.querySelectorAll("#strategy button").forEach(b=>b.onclick=()=>{
   strategy=b.dataset.s; document.querySelectorAll("#strategy button").forEach(x=>x.classList.toggle("on",x===b)); $("stratHelp").textContent = STRAT_HELP[strategy]; renderFind(); renderMap();
@@ -3425,6 +3462,10 @@ buildZips();
 $("z-county").innerHTML += DATA.map(c=>`<option>${c.c}</option>`).join("");
 ["z-q","z-county","z-type","z-beds","z-sort","z-max"].forEach(id=>$(id).addEventListener("input",()=>{zShow=60;renderZips();}));
 $("z-sort").addEventListener("change",e=>{ if (e.isTrusted) zSortTouched = true; });
+$("z-max").addEventListener("input",e=>{ if (e.isTrusted) zMaxTouched = true; });
+$("badvBtn").onclick = ()=>{ const on = document.body.classList.toggle("show-badv"); $("badvBtn").setAttribute("aria-expanded", on); $("badvBtn").textContent = on ? "Fewer loan options ▴" : "More loan options ▾"; };
+$("d-price").addEventListener("focus", e=>{ if (document.body.classList.contains("deal-empty")) e.target.select(); });
+$("d-myrent").addEventListener("input", e=>{ if (e.isTrusted) e.target.dataset.t = "1"; });
 $("v-deal").addEventListener("input",e=>{ if (e.isTrusted && /^(d-price|d-zip|addrIn|pasteText)$/.test(e.target.id)){ dealTyped = true; syncDealEmpty(); } });
 $("planToInv").onclick = ()=>{ const b=document.querySelector('#dealMode button[data-m="rental"]'); if (b) b.click(); };
 $("z-more").onclick = ()=>{ zShow += 60; renderZips(); };
@@ -3588,8 +3629,16 @@ function setAud(a, save=true){
   AUD = a; if (save) store.set("aud", a);
   document.body.dataset.aud = a || "";
   document.querySelectorAll("#audSeg button").forEach(b=>b.classList.toggle("on", !!a && b.dataset.a===a));
-  try{ if (!zSortTouched) $("z-sort").value = a==="buyer" ? "v1" : "cf"; }catch(e){}
+  try{ if (!zSortTouched) $("z-sort").value = a==="buyer" ? "v2" : "cf"; }catch(e){}
   try{ placeQuick(a==="buyer"); }catch(e){ console.warn(e); }
+  try{
+    const mr = $("d-myrent");
+    if (a==="buyer" && mr.value==="2200" && !mr.dataset.t) mr.value = "0";
+    else if (a!=="buyer" && mr.value==="0" && !mr.dataset.t) mr.value = "2200";
+    // investors should not land on the "buy to live here" plan a buyer left behind
+    if (a!=="buyer" && prev==="buyer" && dealMode==="own"){ const rb = document.querySelector('#dealMode button[data-m="rental"]'); if (rb) rb.click(); }
+    if (save && prev!==a && typeof renderDeal==="function") renderDeal();
+  }catch(e){ console.warn(e); }
   if (save && prev!==a){ try{ renderHero(); renderBuyer(); renderZips(); }catch(e){ console.warn(e); } }
   const o = AUD_OFFER[a||"investor"], set = (id,v)=>{ const e=$(id); if (e) e.textContent = v; };
   set("hdrSubscribe", a ? o.btn : "Free monthly report"); set("leadInT", a ? o.inT : "Get the free NJ monthly update"); set("leadInD", a ? o.inD : "Mortgage rates, price and rent moves, and new public data for New Jersey, once a month. No spam; unsubscribe anytime.");
@@ -3879,7 +3928,7 @@ renderAccuracy();
 // ================= BUYER: where can I afford to buy? =================
 const BUY_IDS = ["b-inc","b-price","b-nyc","b-debt","b-cash","b-loan","b-down","b-rate","b-safe","b-flood","b-pri"];
 const BUY_TEXT = ["b-loan","b-flood","b-pri"];
-let buyN = 15;
+let buyN = 5;
 // ---- recent sold prices by town (NJ Division of Taxation SR-1A, usable class-2 sales, last 12 months)
 const SOLDJ = JSON.parse(document.getElementById("nj-sold").textContent), SOLD_MIN = 10;
 function soldFor(zip){ const code = SOLDJ.zcode[zip], v = code && SOLDJ.sold[code]; return (v && v[0] >= SOLD_MIN) ? {n:v[0], p:v.slice(1), few:v[0]<30} : null; }   // p = [p10,p25,p50,p75,p90]
@@ -3983,10 +4032,18 @@ function renderBuyer(){
   const taxes = ZIPP.map(z=>z.tax).sort((x,y)=>x-y), medTax = taxes[Math.floor(taxes.length/2)];
   const typical = ownMaxPrice(buyerD({price:500000, tax:medTax, flood:0}, {...b, price:0}), gross);
   const L = LOANS[b.loan] || LOANS.conv;
+  // how much home does the cash saved actually cover (down payment + closing costs) in a typical-tax town?
+  let cashLine = "";
+  if (b.cash>0){
+    let lo = 0, hi = 3000000;
+    for (let i=0;i<32;i++){ const mid = (lo+hi)/2; (computeOwn(buyerD({price:mid, tax:medTax, flood:0}, {...b, price:0})).cash0 <= b.cash) ? lo = mid : hi = mid; }
+    const cashMax = Math.floor(lo/5000)*5000, cashLimits = cashMax < typical;
+    cashLine = cashMax < 100000 ? `<p class="cashline w"><b>Your ${fmt$(b.cash)} saved is not enough for a typical New Jersey home with this loan.</b> Closing costs alone usually run several thousand dollars, plus the down payment. FHA (3.5% down), VA (0% down) or a first-time buyer program such as NJHMFA down payment help can bring it within reach.</p>` : `<p class="cashline${cashLimits?" w":""}"><b>Your ${fmt$(b.cash)} saved covers a home up to about ${fmt$(cashMax)}</b> (down payment plus closing costs). ${cashLimits ? `Cash is your limit here, not income (income alone would allow about ${fmt$(typical)}). Towns listed below only include homes your cash can cover. A lower down payment, FHA (3.5% down) or VA financing stretches it further.` : `Your income is the tighter limit, so your cash is enough for the homes below.`}</p>`;
+  }
   if (shown.length){ sum.dataset.ok = nOk; sum.dataset.st = nSt; sum.dataset.pool = pool; sum.dataset.typ = Math.round(typical); sum.dataset.px = b.price>0 ? "1" : ""; } else { ["ok","st","pool","typ","px"].forEach(k=>delete sum.dataset[k]); }
   sum.innerHTML = `<div class="verdict ${nOk?"v-good":nSt?"v-ok":"v-bad"}">${
     shown.length ? `<b>${nOk}</b> ZIP code${nOk===1?"":"s"} ${b.price>0 ? "where homes around "+fmtK(b.price)+" are selling fit comfortably" : "have a typical home that fits comfortably"}${nSt?`, and <b>${nSt}</b> more are a stretch`:""} (of ${pool} that pass your safety and flood filters). In a town with the middle NJ tax rate, a price near <b>${fmt$(typical)}</b> would be comfortable; higher-tax towns push that down.`
-    : `<b>No ZIP code fits</b> with these numbers${noCash?`, ${noCash} would fit your income but need more cash than you entered`:""}. A price near ${fmt$(typical)} would be comfortable in a town with the middle NJ tax rate. Try a bigger down payment, FHA or VA financing, a lower minimum safety score, or check homes priced below the typical value.`}</div>`;
+    : `<b>No ZIP code fits</b> with these numbers${noCash?`, ${noCash} would fit your income but need more cash than you entered`:""}. A price near ${fmt$(typical)} would be comfortable in a town with the middle NJ tax rate. Try a bigger down payment, FHA or VA financing, a lower minimum safety score, or check homes priced below the typical value.`}</div>${cashLine}`;
   const n = Math.min(buyN, shown.length);
   list.innerHTML = shown.slice(0,n).map((r,i)=>buyerRowHTML(r,i,b)).join("");
   more.style.display = shown.length>n ? "" : "none"; more.textContent = `Show more (${shown.length-n} left)`;
@@ -4129,11 +4186,11 @@ function renderHero(){
   const saved = store.get("binp", {});
   BUY_IDS.forEach(id=>{ const k=id.slice(2); if (saved[k]!==undefined && saved[k]!=="" && !(k==="inc" && !saved[k])) $(id).value = saved[k]; });
   if (saved.rate===undefined) $("b-rate").value = +(NJ.mortgage30||7).toFixed(3);
-  const upd = ()=>{ buyN = 15; try{ store.set("binp", readBuyer()); }catch(e){} renderBuyer(); try{ if (mapBuilt) renderMap(); }catch(e){} };
+  const upd = ()=>{ buyN = 5; try{ store.set("binp", readBuyer()); }catch(e){} renderBuyer(); try{ if (mapBuilt) renderMap(); }catch(e){} };
   BUY_IDS.forEach(id=>$(id).addEventListener(id==="b-loan"?"change":"input", ()=>{
     if (id==="b-loan"){ $("b-down").value = {conv:10, fha:3.5, va:0}[$("b-loan").value]; }
     upd(); }));
-  $("buyerMore").onclick = ()=>{ buyN += 15; renderBuyer(); };
+  $("buyerMore").onclick = ()=>{ buyN += 10; renderBuyer(); };
   renderBuyer();
 }
 renderHero();
