@@ -656,6 +656,8 @@ body.deal-empty[data-aud="buyer"] #d-price{color:transparent}
   #v-map>.card{display:flex;flex-direction:column}
   #v-map .mapfindrow{order:5}#v-map .mapgrid{order:4}#v-map .maphint{order:6}#v-map>.card>.note{order:7}
 }
+/* iPhones zoom the page when a text box is under 16px */
+textarea,#pasteText{font-size:16px!important}
 /* cash-saved line */
 .cashline{margin:8px 0 0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:14px;line-height:1.5}
 .cashline.w{border-color:#c97a00;background:color-mix(in srgb,#c97a00 10%,var(--card))}
