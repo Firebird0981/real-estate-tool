@@ -918,7 +918,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   <div class="card">
     <h2>ZIP code explorer</h2>
     <p class="hint inv-only">All 547 NJ ZIP codes with a Zillow home value: town-level 2025 tax rate, HUD FY2027 ZIP-level Section 8 rents, 1-year price change, and town-level crime from the NJ State Police. Estimated cash flow uses your financing settings from the Best investment tab.</p>
-    <p class="hint buy-only">Look up any of the 547 NJ ZIP codes that have a Zillow home value. Each row shows the typical price, last year's price change, the town's 2025 property-tax rate and town-level crime from the NJ State Police. Sort by price, tax rate or safety, or set a maximum price.</p>
+    <p class="hint buy-only">Look up any of the 547 NJ ZIP codes. Each row shows the typical price (the median of recent sales where there are enough, otherwise Zillow's home value) with the range most homes sell in, last year's price change, the town's 2025 property-tax rate and town-level crime from the NJ State Police. Sort by price, tax rate or safety, or set a maximum price.</p>
     <div class="grid">
       <label>Search town or ZIP<input id="z-q" placeholder="e.g. Rahway or 0706"></label>
       <label>County<select id="z-county"><option value="">All counties</option></select></label>
@@ -1589,8 +1589,20 @@ function rentYoyLine(c){
   if (Math.abs(v) > 12) return `Zillow's rent index moved <b>${v>0?"+":""}${v}%</b> here in the last year, but a swing that large in one ZIP usually comes from a thin sample of listings, not a real trend. Do not plan around it (typical NJ ZIP: +2.7%).`;
   return `Zillow asking rents here moved <b>${v>0?"+":""}${v}%</b> in the last year (typical NJ ZIP: +2.7%).`;
 }
+// ---- recent sold prices by town (NJ Division of Taxation SR-1A, usable class-2 sales, last 12 months)
+const SOLDJ = JSON.parse(document.getElementById("nj-sold").textContent), SOLD_MIN = 10;
+function soldFor(zip){ const code = SOLDJ.zcode[zip], v = code && SOLDJ.sold[code]; return (v && v[0] >= SOLD_MIN) ? {n:v[0], p:v.slice(1), few:v[0]<30} : null; }   // p = [p10,p25,p50,p75,p90]
+// A ZIP's typical price is the median of recent sales when its sales district is that one ZIP and has 30+ sales;
+// otherwise it stays Zillow's ZIP-level value (a district with several ZIPs would give them all the same number).
+function zipPriceInfo(z, cnt){
+  const sd = soldFor(z.zip), code = SOLDJ.zcode[z.zip];
+  if (sd && sd.n>=30 && cnt[code]===1 && sd.p[2]>=20000) return {price:Math.round(sd.p[2]/1000)*1000, src:"sold", n:sd.n, p:sd.p};
+  return {price:z.value, src:"zillow", n:sd?sd.n:0, p:null};
+}
 function buildZips(){
+  const _cnt = {}; ZIPS.forEach(z=>{ const k = SOLDJ.zcode[z.zip]; if (k) _cnt[k] = (_cnt[k]||0)+1; });
   ZIPP = ZIPS.map(z=>{
+    const zp = zipPriceInfo(z, _cnt);
     const c = DATA.find(x=>x.c===z.county);
     // blend HUD's ZIP rent signal with a home-value signal (rents scale ~0.4 power of price), then cap at ±25% of county rent
     // Rent: Zillow's observed asking rent (ZORI) where Zillow publishes it; otherwise a model fitted on the
@@ -1608,7 +1620,7 @@ function buildZips(){
     return {...c, c:`${z.zip} ${z.name}`, zip:z.zip, area:z.name, county:c.c, isZip:true,
       inc: aInc ? Math.min(aInc, 250000) : c.inc, incSrc: aInc ? "zip" : "county", vacAdj: vacShr==null ? 0 : clamp(vacShr-0.035, -0.015, 0.04), vacObs, hasAcs: !!A.length,
       bld24, units5, acsRent: aRent||null, blendRent, taxChg: (()=>{ const h=TAXH[z.zip]; return h&&h[0]>0 ? +((h[1]/h[0]-1)*100).toFixed(1) : null; })(),
-      price:z.value, yoy:z.yoy, appr: +clamp(0.5*z.yoy + 0.5*c.appr, -2, 8).toFixed(1),
+      price:zp.price, priceZ:z.value, priceSrc:zp.src, soldN:zp.n, soldP:zp.p, yoy:z.yoy, appr: +clamp(0.5*z.yoy + 0.5*c.appr, -2, 8).toFixed(1),
       rent: z.zori ? z.zori : estRent, rentSrc: z.zori ? "zillow" : (blendRent ? "est+acs" : "est"), rentYoY: z.zoriYoY, fmr2:z.hud2, fmr3:z.hud3, safmr:!!z.safmr,
       tax: z.tax ?? c.tax, taxSrc: z.tax!=null ? "town" : "county", taxDistrict: z.taxDistrict, genRate: z.genRate,
       vio: (()=>{ const r = crimeFor(z.zip); return r ? r.v : (z.vio100k!=null ? +(z.vio100k/100).toFixed(2) : c.vio); })(),
@@ -2400,7 +2412,7 @@ function renderZips(){
   $("zTable").innerHTML = `<thead><tr><th>Area · ZIP</th><th>County</th><th>Est. price</th><th title="Change in the ZIP's typical home value over the past 12 months (Zillow)">Price change, 1 yr</th><th>Typical rent</th><th>HUD 2BR · 3BR</th><th>Sec 8 yield${gq("s8yield")}</th><th>Tax${gq("efftax")}</th><th>Violent /1k</th><th>Cash flow /mo</th><th></th></tr></thead>
   <tbody>${rows.slice(0,zShow).map(({z,u,hy})=>`<tr>
     <td><b>${z.area}</b> <span class="note">${z.zip}</span>${z.rcInfo&&!z.rcInfo.legacy?` <span class="pill w" title="${z.rcInfo.town}: ${z.rcInfo.rule}">Rent ctrl</span>`:""}</td><td>${z.county}</td>
-    <td>${fmtK(u.price)}</td><td class="${z.yoy>=0?'good':'bad'}">${z.yoy>0?"+":""}${z.yoy}%</td>
+    <td>${fmtK(u.price)}${tk==="sfh" && z.priceSrc==="sold" && z.soldP ? `<div class="note" style="white-space:nowrap" title="Middle half of ${z.soldN} sales in the last 12 months">${fmtK(z.soldP[1])}–${fmtK(z.soldP[3])}</div>` : ""}</td><td class="${z.yoy>=0?'good':'bad'}">${z.yoy>0?"+":""}${z.yoy}%</td>
     <td>${fmt$(z.rent)} <span class="note"${z.rentSrc==="zillow"?"":` title="Modeled, not observed: likely ${fmt$(rentRange(z).lo)} to ${fmt$(rentRange(z).hi)}"`}>${z.rentSrc==="zillow"?"Zillow":"est. ±"+Math.round(rentRange(z).e*100)+"%"}</span></td>
     <td>${fmt$(z.fmr2)} · ${fmt$(z.fmr3)}${z.safmr?"":' <span class="note">(metro)</span>'}</td>
     <td>${pct(hy,1)}</td>
@@ -3953,8 +3965,6 @@ const BUY_IDS = ["b-inc","b-price","b-nyc","b-debt","b-cash","b-loan","b-down","
 const BUY_TEXT = ["b-loan","b-flood","b-pri"];
 let buyN = 5;
 // ---- recent sold prices by town (NJ Division of Taxation SR-1A, usable class-2 sales, last 12 months)
-const SOLDJ = JSON.parse(document.getElementById("nj-sold").textContent), SOLD_MIN = 10;
-function soldFor(zip){ const code = SOLDJ.zcode[zip], v = code && SOLDJ.sold[code]; return (v && v[0] >= SOLD_MIN) ? {n:v[0], p:v.slice(1), few:v[0]<30} : null; }   // p = [p10,p25,p50,p75,p90]
 // approximate share of recent sales below a price, from the five percentile points (0.05 = "under 10%", 0.95 = "over 90%")
 function soldShare(sd, price){
   const P = [0.10,0.25,0.50,0.75,0.90], v = sd.p;
@@ -4002,7 +4012,7 @@ function buyerRowHTML(r, i, b){
   const maxP = ownMaxPrice(d, gross), maxS = ownMaxPrice(d, gross, 0.36, 0.43), sd = soldFor(c.zip);
   const kv = [
     ...(b.price>0 ? [["Homes sold near "+fmtK(b.price)+" (±15%), share of recent sales", r.near ? nearTxt(r.near)+(r.near.sales ? "" : " · typical value "+fmtK(c.price)) : ""]] : []),
-    ["Typical home value (Zillow)", fmt$(c.price)], ["1-year price change", (c.yoy>0?"+":"")+c.yoy+"%"],
+    [c.priceSrc==="sold" ? `Typical home price (median of ${c.soldN} recent sales)` : "Typical home value (Zillow)", fmt$(c.price)], ["1-year price change", (c.yoy>0?"+":"")+c.yoy+"%"],
     ...(sd ? [[`Recent sales in ${c.taxDistrict}, middle half (${sd.n} sold${sd.few?", few":""})`, soldRange(sd)],
               ...(gross>0 ? [["Share of those sales under your comfortable price", soldShareTxt(soldShare(sd, maxP))]] : [])] : []),
     ["Monthly payment", fmt$(o.total)],
@@ -4019,7 +4029,7 @@ function buyerRowHTML(r, i, b){
   return `<div class="row">
     <div class="n">${i+1}</div>
     <div><div class="t">${placeLabel(c)}</div>
-      <div class="m">${b.price>0 ? "At your "+fmtK(b.price) : fmtK(c.price)+" typical home"} · ${fmt$(o.total)}/mo · ${fmtK(o.cash0)} cash to close</div>
+      <div class="m">${b.price>0 ? "At your "+fmtK(b.price) : fmtK(c.price)+" typical home"+(c.priceSrc==="sold" && c.soldP ? " (most sell for "+fmtK(c.soldP[1])+" to "+fmtK(c.soldP[3])+")" : "")} · ${fmt$(o.total)}/mo · ${fmtK(o.cash0)} cash to close</div>
       <div style="margin-top:4px">${tags.join("")}</div>${cmpBtnHTML(c.zip)}</div>
     <div class="s">${pct(r.h,0)}<small>of income</small></div>
     <div class="detail"><div class="kv">${kv}</div>
@@ -4031,7 +4041,7 @@ function renderBuyer(){
   if (!$("buyerCard")) return;
   const b = readBuyer(); $("b-safe-v").textContent = b.safe;
   const sum = $("buyerSummary"), list = $("buyerList"), more = $("buyerMore"), note = $("buyerNote");
-  const caveat = `Typical home values are Zillow's for the whole ZIP (single-family homes and condos), so you can find homes below or above them. The payment uses the town's 2025 property-tax rate, a statewide insurance estimate, closing costs worked out line by line (attorney, title, lender fees, inspections and prepaids, about 2.5% of the price) and the loan you pick. Two ZIPs dominated by 55+ communities are left out. A lender decides what you actually qualify for.`;
+  const caveat = `Typical prices are the median of the last 12 months of sales (NJ Division of Taxation) where a town has at least 30 of them in one ZIP; elsewhere they are Zillow's value for the ZIP (single-family homes and condos). Either way you can find homes below or above them. The payment uses the town's 2025 property-tax rate, a statewide insurance estimate, closing costs worked out line by line (attorney, title, lender fees, inspections and prepaids, about 2.5% of the price) and the loan you pick. Two ZIPs dominated by 55+ communities are left out. A lender decides what you actually qualify for.`;
   if (!(b.inc>0)){
     ["ok","st","pool","typ","px"].forEach(k=>delete sum.dataset[k]);
     sum.innerHTML = `<div class="verdict v-ok">Enter your household income to see which New Jersey towns fit.</div>`;
