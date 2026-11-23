@@ -658,6 +658,13 @@ body.deal-empty[data-aud="buyer"] #d-price{color:transparent}
 }
 /* iPhones zoom the page when a text box is under 16px */
 textarea,#pasteText{font-size:16px!important}
+/* public tax-record card in Check a home */
+.recbox{margin:10px 0 0;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px 14px;font-size:14px;line-height:1.5}
+.recbox h4{margin:0 0 6px;font-size:14px}
+.recbox dl{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;margin:0}
+.recbox dt{color:var(--muted)}.recbox dd{margin:0;font-weight:600}
+.recbox .recpick{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.recbox .recpick button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 12px;font:600 13px var(--ui);cursor:pointer;min-height:40px}
 /* cash-saved line */
 .cashline{margin:8px 0 0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:14px;line-height:1.5}
 .cashline.w{border-color:#c97a00;background:color-mix(in srgb,#c97a00 10%,var(--card))}
@@ -982,10 +989,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div style="height:14px"></div>
     <details class="paste" id="pasteBox" open>
       <summary>Start with the address</summary>
-      <p class="note" id="addrIntro" style="margin:8px 0">Type the property's address. We fill in the town, tax rate and typical rent, and start you with a typical price for the area. For the exact asking price and details, paste the listing text below.</p>
+      <p class="note" id="addrIntro" style="margin:8px 0">Type the property's address. We look it up in New Jersey's public tax records and fill in its property tax, assessed value, year built and last sale, plus the town's typical rent. Add the asking price yourself, or paste the listing below.</p>
       <div class="addrrow"><input id="addrIn" type="text" inputmode="text" autocomplete="street-address" placeholder="123 Main St, Newark, NJ 07102" aria-label="Property address"><button class="btn sm" id="addrGo" type="button">Look up</button></div>
       <p class="note" id="addrMsg" aria-live="polite" style="margin:8px 0 0"></p>
       <p class="note" id="addrPriv" style="margin:6px 0 0;display:none">The address is sent to our property-data provider to look it up. We don't store it.</p>
+      <div id="recBox" class="recbox" hidden></div>
       <details class="subpaste" id="pasteAlt"><summary>Or paste the listing text instead</summary>
       <p class="note" style="margin:8px 0">On the Zillow, Redfin or Realtor.com listing page, press Ctrl+A (Cmd+A on a Mac), copy, and paste here. We'll fill in the price, ZIP, bedrooms, units, taxes and rent estimate.</p>
       <textarea id="pasteText" rows="4" placeholder="Paste listing text here…"></textarea>
@@ -1235,6 +1243,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <ul>
       <li><b>Nothing you type is sent to us.</b> We do not ask for your name or email, and downloaded reports are made in your browser.</li>
       <li><b>If you email us:</b> we receive the address and message you send, and use it only to reply.</li>
+      <li><b>If you look up an address:</b> the street address you type is sent from your browser to New Jersey's public property-records service (run by the NJ Office of GIS on Esri ArcGIS) to find that property's tax record. It never comes to us, and we don't keep it.</li>
       <li class="pv-lookup" style="display:none"><b>If you use the address lookup:</b> the address you type is sent to our property-data provider (RentCast) through our server so it can return the property's details. We don't keep a copy of it.</li>
       <li><b>Deals, settings and towns you enter:</b> stored only in your own browser (local storage). We don't receive them. Clearing your browser data deletes them.</li>
       <li><b>If you use the version hosted on claude.ai while signed in to Claude:</b> saved deals can sync to your Claude account so they appear on your other devices,. Anthropic, which runs claude.ai, handles that data under its own privacy policy.</li>
@@ -1344,7 +1353,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         <div><h4>Company</h4><a href="#privacy" data-go="privacy">Privacy policy</a><a href="mailto:larose.christian1@gmail.com?subject=Garden%20State%20Yield%20feedback">Send feedback</a><a href="#" id="ftSubscribe">Monthly report</a></div>
       </div>
       <div class="legal">
-        <p><b>Data as of:</b> home values and rents October 2026 (Zillow Research) · recent sales Nov 2025 to Oct 2026 (NJ Division of Taxation) · mortgage rate 7.28% on Nov 19, 2026 (Freddie Mac) · property-tax rates 2025 (NJ Division of Taxation).</p>
+        <p><b>Data as of:</b> home values and rents October 2026 (Zillow Research) · recent sales Nov 2025 to Oct 2026 (NJ Division of Taxation) · mortgage rate 7.28% on Nov 19, 2026 (Freddie Mac) · property-tax rates 2025 (NJ Division of Taxation) · individual property tax records (NJ Office of GIS parcels with MOD-IV, looked up live).</p>
         <p><b>Not financial, tax, legal or real estate brokerage advice.</b> Garden State Yield is an educational estimating tool. Figures are estimates based on public data that may be incomplete, out of date or wrong; actual prices, rents, taxes, insurance and returns vary by property. Verify everything with a licensed real estate agent, attorney, lender and CPA before buying.</p>
         <p>Home value data © Zillow, Inc. (Zillow Home Value Index / Observed Rent Index). Section 8 rents: U.S. Dept. of Housing and Urban Development. Income and rents: U.S. Census Bureau. Crime: NJ State Police Uniform Crime Reporting (FBI for towns you add). Tax rates: NJ Division of Taxation (2025 General and Effective Tax Rates). Mortgage rates: Freddie Mac. Not affiliated with or endorsed by any of these organizations.</p>
         <p>© <span id="ftYear"></span> <span class="ft-brand2">Garden State Yield</span>. Deals you save stay in your own browser. <a href="#privacy" data-go="privacy">Read the privacy policy</a>.</p>
@@ -4350,6 +4359,77 @@ async function fetchJSON(url, ms){
   try { const r = await fetch(url, {signal: ctl.signal}); if (!r.ok) { const e = new Error("http "+r.status); e.status = r.status; throw e; } return await r.json(); }
   finally { clearTimeout(t); }
 }
+// ---- New Jersey public tax record (NJ Office of GIS parcels joined with MOD-IV), queried straight from the browser
+const NJ_PARCELS = "https://services2.arcgis.com/XVOqAjTOJ5P6ngMu/ArcGIS/rest/services/Parcels_Composite_NJ_WM/FeatureServer/0/query";
+const ST_SUFFIX = /^(st|street|ave|av|avenue|rd|road|dr|drive|ln|lane|ct|court|pl|place|blvd|boulevard|ter|terr|terrace|way|hwy|highway|pkwy|parkway|cir|circle|sq|square|aly|row|tpke|turnpike|pike|trl|trail|xing|run|path|walk|plz|plaza)$/;
+const ST_DIR = /^(n|s|e|w|ne|nw|se|sw|north|south|east|west|no|so)$/;
+const PROP_CLASS = {"1":"Vacant land","2":"Home (1 to 4 families or a condo)","3A":"Farm (with a house)","3B":"Farmland","4A":"Commercial","4B":"Industrial","4C":"Apartment building (5+ units)","15C":"Public property","15D":"Church or charity","15F":"Other exempt property"};
+function parseStreet(a){
+  const first = a.split(",")[0].trim().toUpperCase().replace(/[.#]/g," ").replace(/\s+/g," ");
+  const m = first.match(/^(\d+[A-Z]?(?:-\d+[A-Z]?)?)\s+(.*)$/); if (!m) return null;
+  const unitM = m[2].match(/\b(?:UNIT|APT|APARTMENT|STE|SUITE)\s*([A-Z0-9-]+)$/);
+  let words = m[2].replace(/\b(?:UNIT|APT|APARTMENT|STE|SUITE)\s*[A-Z0-9-]+$/,"").trim().split(" ").filter(Boolean);
+  // no commas ("12 Oak Ave Montclair NJ 07042"): the street ends at its first suffix word; drop NJ and the ZIP
+  words = words.filter(w=>!/^(NJ|N\.J|NEW|JERSEY|\d{5})$/.test(w));
+  const sfx = words.findIndex((w,i)=>i>0 && ST_SUFFIX.test(w.toLowerCase())); if (sfx>0) words = words.slice(0, sfx+1);
+  const core = words.filter(w=>!ST_SUFFIX.test(w.toLowerCase()) && !ST_DIR.test(w.toLowerCase()));
+  const key = (core.length ? core : words).reduce((x,y)=>y.length>x.length?y:x, "");
+  return {num:m[1], key:key.replace(/'/g,""), words:core, unit:unitM?unitM[1]:null};
+}
+function recDate(d){ d = String(d||""); if (!/^\d{6}$/.test(d)) return null; const y = +d.slice(0,2), mo = +d.slice(2,4); if (!mo || mo>12) return null; return new Date((y>40?1900:2000)+y, mo-1, 1).toLocaleDateString("en-US",{month:"short",year:"numeric"}); }
+async function njRecord(a, pa){
+  const st = parseStreet(a); if (!st || st.key.length<2) return {status:"noparse"};
+  // search the ZIP first, then the town, then all of New Jersey
+  const base = `PROP_LOC LIKE '${st.num} %${st.key}%'`, filters = [];
+  if (pa.zip) filters.push(` AND (ZIP5='${pa.zip}' OR ZIP_CODE='${pa.zip}')`);
+  const tw = townKey(pa.town||"").toUpperCase().replace(/[^A-Z ]/g,""); if (tw.length>=3) filters.push(` AND MUN_NAME LIKE '%${tw}%'`);
+  if (!filters.length) filters.push("");      // only search all of NJ when no ZIP or town was given
+  let rows = [];
+  for (const f of filters){
+    const p = new URLSearchParams({where:base+f, outFields:"PROP_LOC,MUN_NAME,COUNTY,PROP_CLASS,NET_VALUE,LAST_YR_TX,BLDG_DESC,YR_CONSTR,SALE_PRICE,DEED_DATE,CALC_ACRE,ZIP5,ZIP_CODE,DWELL", returnGeometry:"false", resultRecordCount:"60", f:"json"});
+    const j = await fetchJSON(NJ_PARCELS+"?"+p, 12000);
+    rows = (j.features||[]).map(f=>f.attributes).filter(r=>r && r.PROP_LOC);
+    if (rows.length) break;
+  }
+  if (!rows.length) return {status:"none"};
+  const ta = " "+townKey(a)+" ";
+  const scored = rows.map(r=>{
+    let sc = 0; const loc = " "+String(r.PROP_LOC).toUpperCase().replace(/[.]/g," ").replace(/\s+/g," ")+" ";
+    if (pa.zip && (r.ZIP5===pa.zip || r.ZIP_CODE===pa.zip)) sc += 4;
+    const tk = townKey(String(r.MUN_NAME).replace(/\b(TWP|BORO|CITY|TOWN|VILLAGE)\b/gi,"")); if (tk && ta.includes(" "+tk+" ")) sc += 4;
+    if (pa.town && townKey(pa.town)===tk) sc += 2;
+    st.words.forEach(w=>{ if (loc.includes(" "+w+" ")) sc += 1; });
+    if (st.unit) sc += loc.includes(" "+st.unit+" ") ? 2 : -1; else if (/\b(UNIT|APT|#)\b/.test(loc)) sc -= 1;
+    if (String(r.PROP_LOC).toUpperCase().startsWith(st.num+" ")) sc += 1;
+    return {r, sc};
+  }).sort((x,y)=>y.sc-x.sc);
+  const top = scored[0], ties = scored.filter(x=>x.sc===top.sc);
+  const towns = [...new Set(ties.map(x=>x.r.MUN_NAME))];
+  if (towns.length>1 || (!pa.zip && top.sc<4 && scored.length>1)) return {status:"pick", options:scored.slice(0,5).map(x=>x.r)};
+  return {status:"ok", rec:top.r};
+}
+function showRecord(r){
+  const box = $("recBox"), cls = PROP_CLASS[String(r.PROP_CLASS||"").toUpperCase()] || (r.PROP_CLASS ? "Class "+r.PROP_CLASS : "Not listed");
+  const sale = +r.SALE_PRICE>=10000 ? `${fmt$(+r.SALE_PRICE)}${recDate(r.DEED_DATE)?" ("+recDate(r.DEED_DATE)+")":""}` : (recDate(r.DEED_DATE) ? `Transferred ${recDate(r.DEED_DATE)}, no market sale price recorded` : "Not listed");
+  const units = +r.DWELL>0 ? +r.DWELL : ((String(r.BLDG_DESC||"").match(/(\d)U\b/)||[])[1]||null);
+  const rows = [
+    ["Address", `${esc(r.PROP_LOC)}, ${esc(r.MUN_NAME)}`],
+    ["Type", esc(cls)+(units>1?` · ${units} units`:"")],
+    ["Tax bill last year", +r.LAST_YR_TX>0 ? fmt$(Math.round(+r.LAST_YR_TX)) : "Not listed"],
+    ["Assessed value", +r.NET_VALUE>0 ? fmt$(+r.NET_VALUE) : "Not listed"],
+    ["Last sale", sale],
+    ["Year built", +r.YR_CONSTR>1700 ? r.YR_CONSTR : "Not listed"],
+  ];
+  if (+r.CALC_ACRE>0) rows.push(["Lot size", (+r.CALC_ACRE).toFixed(2)+" acres"]);
+  box.innerHTML = `<h4>Public tax record</h4><dl>${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl><p class="note" style="margin:8px 0 0">From New Jersey's MOD-IV tax list (NJ Office of GIS). Last year's bill can include the current owner's exemptions, and towns sometimes reassess after a sale, so your bill may differ. We estimate yours from the assessed value and this year's town rate.</p>`;
+  box.hidden = false;
+}
+function showPick(opts){
+  const box = $("recBox");
+  box.innerHTML = `<h4>Which property do you mean?</h4><p class="note" style="margin:0">We found more than one match. Pick one, or add the town and ZIP to the address.</p><div class="recpick">${opts.map((r,i)=>`<button type="button" data-i="${i}">${esc(r.PROP_LOC)}, ${esc(r.MUN_NAME)}</button>`).join("")}</div>`;
+  box.hidden = false;
+  box.querySelectorAll("button[data-i]").forEach(b=>b.onclick = ()=>{ const r = opts[+b.dataset.i]; const z = /^0[78]\d{3}$/.test(r.ZIP5||"") ? r.ZIP5 : (/^0[78]\d{3}$/.test(r.ZIP_CODE||"") ? r.ZIP_CODE : ""); $("addrIn").value = `${r.PROP_LOC}, ${String(r.MUN_NAME).replace(/\b(TWP|BORO|CITY)\b/g,"").trim()}, NJ${z?" "+z:""}`; lookupAddress(); });
+}
 async function lookupAddress(){
   const msg = $("addrMsg"), a = $("addrIn").value.trim().replace(/\s+/g," ");
   if (a.length < 6){ msg.textContent = "Type the street address, town and ZIP, like 123 Main St, Newark, NJ 07102."; return; }
@@ -4362,7 +4442,27 @@ async function lookupAddress(){
         if (j && !j.error && (j.price || j.beds || j.sqft || j.annualTax || j.zip)) { o = {...j}; svc = j; } else svcNote = "We couldn't find that exact property in the data service. "; }
       catch(e){ svcNote = e.status===429 ? "The lookup service is busy right now. " : e.status===404 ? "We couldn't find that exact property in the data service. " : "The property lookup didn't respond. "; }
     }
+    // the property's own public tax record
+    let rec = null, recNote = "";
+    $("recBox").hidden = true;
+    if (!svc){
+      try {
+        const rr = await njRecord(a, pa);
+        if (rr.status==="ok") rec = rr.rec;
+        else if (rr.status==="pick"){ showPick(rr.options); recNote = "We found more than one property with that address. "; }
+        else if (rr.status==="none") recNote = "We couldn't find that address in New Jersey's tax records. ";
+      } catch(e){ recNote = "New Jersey's tax-record service didn't respond, so we used town averages. "; }
+    }
+    if (rec){
+      const rz = [rec.ZIP5, rec.ZIP_CODE].find(z=>/^0[78]\d{3}$/.test(z||"") && ZIPP.some(x=>x.zip===z));
+      if (!pa.zip && rz) o.zip = rz;
+      if (+rec.NET_VALUE>=5000) o.assessed = +rec.NET_VALUE;
+      if (+rec.YR_CONSTR>1700) o.yearBuilt = +rec.YR_CONSTR;
+      const u = +rec.DWELL>0 ? +rec.DWELL : +((String(rec.BLDG_DESC||"").match(/(\d)U\b/)||[])[1]||0);
+      if (u>=1 && u<=4) o.units = u;
+    }
     if (!o.zip && pa.zip) o.zip = pa.zip;
+    if (!rec && $("recBox").querySelector(".recpick")){ msg.innerHTML = "We found that street address in more than one town. Pick the right one below."; return; }
     if (!o.zip){ msg.innerHTML = "We couldn't tell which town that is. Add the ZIP code, like <b>123 Main St, Newark, NJ 07102</b>."; return; }
     if (!/^0[78]\d{3}$/.test(o.zip)){ msg.textContent = "That ZIP code isn't in New Jersey."; return; }
     const place = ZIPP.find(x=>x.zip===o.zip);
@@ -4370,6 +4470,11 @@ async function lookupAddress(){
     const hadPrice = !!(o.price && +o.price >= 20000);
     if (!svc){ delete o.price; }
     const res = applyListing(o, document.createElement("span"));
+    if (rec){
+      if (!(+$("d-gen").value>0) && +rec.LAST_YR_TX>0 && +rec.NET_VALUE>0) $("d-gen").value = (+rec.LAST_YR_TX/ +rec.NET_VALUE*100).toFixed(3);
+      if (+$("d-assess").value>0 && +$("d-gen").value>0) res.got.push(`property tax about ${fmt$(Math.round(+$("d-assess").value * +$("d-gen").value/100))}/yr from the tax record`);
+      showRecord(rec); renderDeal();
+    }
     if (AUD==="buyer" && !svc && !(+o.units>1)) $("d-units").value = 1;   // buyers start from a single-family home, not the area's typical 2-unit
     // no real price available: use the area's typical price as a clearly-labelled placeholder
     if (!hadPrice || !svc){
@@ -4383,7 +4488,9 @@ async function lookupAddress(){
       else if (hadPrice) parts.push(`<b>The price is an automated estimate${svc.priceSource==="lastSale"?" (the last sale price)":""}, not an asking price.</b> Replace it with the real price.`);
       if (res.miss.length) parts.push(`Check: ${res.miss.join(", ")}.`);
     } else {
-      parts.push(`${svcNote}<span class="good">${esc(place.area)} ${place.zip}:</span> we filled in the ZIP, the town's tax rate, typical rent and a <b>typical ${esc(fmtK(+$("d-price").value))} price for a ${+$("d-units").value>=2?(+$("d-units").value)+"-unit building":"single-family home"} here</b> (change the units below if that's wrong). Replace the price with the real asking price${ADDR_API?"":" (the property details need the data service, or paste the listing text below)"}.`);
+      if (rec) parts.push(`<span class="good">Found ${esc(rec.PROP_LOC)}, ${esc(rec.MUN_NAME)} in the public tax records.</span>`);
+      else if (recNote) parts.push(recNote);
+      parts.push(`${svcNote}<span class="good">${esc(place.area)} ${place.zip}:</span> we filled in the ZIP, the town's tax rate, typical rent and a <b>typical ${esc(fmtK(+$("d-price").value))} price for a ${+$("d-units").value>=2?(+$("d-units").value)+"-unit building":"single-family home"} here</b> (change the units below if that's wrong). Replace the price with the real asking price${rec ? ". The tax, assessed value and year built come from the tax record below" : ADDR_API ? "" : ", or paste the listing text below for the details"}.`);
     }
     if (pa.multi) parts.push(`${esc(pa.town)} has more than one ZIP code. We used ${place.zip}; correct it in the ZIP box if needed.`);
     const zl = a.replace(/[.,#]/g,"").replace(/\s+/g,"-");
