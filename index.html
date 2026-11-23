@@ -1031,6 +1031,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       <label class="bhide">Living area (sq ft)<input id="d-sqft" type="number" value="0" step="50" placeholder="for comps"></label>
       <label class="mode-only" data-modes="brrrr flip">Rehab budget ($)<input id="d-rehab" type="number" value="60000" step="5000"></label>
       <label class="mode-only" data-modes="brrrr flip">After-repair value, ARV ($)<input id="d-arv" type="number" value="700000" step="5000"></label>
+      <label class="mode-only" data-modes="rental househack">Rehab / repairs before renting ($)<input id="d-repairs" type="number" value="0" step="1000" placeholder="0"></label>
+      <label class="mode-only" data-modes="rental househack">Value after repairs ($, optional)<input id="d-rarv" type="number" value="0" step="5000" placeholder="leave 0 if same as price"></label>
       <label class="mode-only" data-modes="brrrr flip">Rehab + hold time (months)<input id="d-months" type="number" value="5" step="1"></label>
     </div>
     <p class="note" id="priceCheck" style="margin-top:8px"></p>
@@ -1661,7 +1663,7 @@ let searchLevel = "county";
 const $ = id => document.getElementById(id);
 // ---- money boxes show thousands separators as you type (1,250,000). The page still reads plain numbers from them.
 (function(){
-  const IDS = ["b-inc","b-debt","b-cash","b-price","f-budget","f-cash","mapInc","z-max","d-price","d-rent","d-sqft","d-rehab","d-arv","d-inc","d-debt","d-myrent","d-ins","d-hoa","d-assess","d-flood","d-supp","d-util","d-cfee","d-ccost","d-adr"];
+  const IDS = ["b-inc","b-debt","b-cash","b-price","f-budget","f-cash","mapInc","z-max","d-price","d-rent","d-sqft","d-rehab","d-arv","d-inc","d-debt","d-myrent","d-ins","d-hoa","d-assess","d-flood","d-supp","d-util","d-cfee","d-ccost","d-repairs","d-rarv","d-adr"];
   const nat = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
   const fmt = v => { v = String(v==null ? "" : v).replace(/[^0-9.\-]/g, ""); const neg = v[0]==="-"; v = v.replace(/-/g,""); const i = v.indexOf("."); let ip = i<0 ? v : v.slice(0,i), fp = i<0 ? "" : "."+v.slice(i+1).replace(/\./g,""); return (neg?"-":"") + ip.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + fp; };
   IDS.forEach(id=>{
@@ -2520,7 +2522,7 @@ function renderAllTable(){
 const DEAL_IDS = ["d-county","d-price","d-units","d-rent","d-rehab","d-arv","d-months","d-adr","d-occ","d-stay","d-cfee","d-ccost","d-supp",
   "d-tax","d-ins","d-hoa","d-maint","d-vac","d-mg","d-util","d-down","d-rate","d-term","d-term2","d-hmltv","d-hmrate","d-refiltv","d-refirate","d-close",
   "d-appr","d-rentg","d-expg","d-hold","d-sellc","d-target","d-beds","d-fed","d-nj","d-land","d-pl","d-zip",
-  "d-loan","d-mi","d-uf","d-myrent","d-rc","d-rccap","d-assess","d-gen","d-fz","d-flood","d-pre78","d-fees","d-sqft","d-inc","d-debt"];
+  "d-loan","d-mi","d-uf","d-myrent","d-rc","d-rccap","d-assess","d-gen","d-fz","d-flood","d-pre78","d-fees","d-sqft","d-inc","d-debt","d-repairs","d-rarv"];
 const STR_IDS = ["d-county","d-pl","d-zip","d-loan","d-rc","d-fz","d-pre78"];
 function readDeal(){
   const o={mode:dealMode}; DEAL_IDS.forEach(id=>{const el=$(id); o[id.slice(2)] = STR_IDS.includes(id)?el.value:(+el.value||0);});
@@ -2579,7 +2581,9 @@ function computeDeal(d){
   } else {
     gross = units*d.rent; r.vacancy = gross*d.vac/100; r.strCosts = 0;
   }
-  const value = m==="brrrr" ? d.arv : d.price;
+  const fixUp = (m==="rental" || m==="househack") ? Math.max(0, d.repairs||0) : 0;            // repairs paid in cash before renting
+  const value = m==="brrrr" ? d.arv : (fixUp>0 || (m==="rental"||m==="househack")) && (d.rarv||0) > d.price ? d.rarv : d.price;
+  r.fixUp = fixUp;
   const eff = gross - r.vacancy;
   r.gross=gross; r.eff=eff; r.value=value;
   r.taxes = taxYr(value)/12; r.ins = d.ins/12; r.hoa=d.hoa; r.util=d.util;
@@ -2600,10 +2604,10 @@ function computeDeal(d){
   } else if (m==="househack"){
     const base = d.price*(1-d.down/100);
     r.baseLoan = base; r.loan = base*(1+d.uf/100); r.rate = d.rate; r.mi = base*d.mi/100/12;
-    r.cashIn = d.price*d.down/100 + d.price*d.close/100; r.trueCashIn = r.cashIn;
+    r.cashIn = d.price*d.down/100 + d.price*d.close/100 + fixUp; r.trueCashIn = r.cashIn;
   } else {
     r.loan = d.price*(1-d.down/100); r.rate = d.rate;
-    r.cashIn = d.price*d.down/100 + d.price*d.close/100; r.trueCashIn = r.cashIn;
+    r.cashIn = d.price*d.down/100 + d.price*d.close/100 + fixUp; r.trueCashIn = r.cashIn;
   }
   r.term = m==="brrrr" ? d.term2 : d.term;
   r.pi = pmt(r.loan, r.rate, r.term);
@@ -2632,7 +2636,7 @@ function computeDeal(d){
   const varPct = (m==="str") ? (d.maint/100 + 0.03) : (d.maint/100);
   // income-tax model
   const ordRate = (d.fed + d.nj)/100;
-  const costBasis = (m==="brrrr" ? d.price + d.rehab : d.price) + d.price*d.close/100;
+  const costBasis = (m==="brrrr" ? d.price + d.rehab : d.price + fixUp) + d.price*d.close/100;
   r.dep = costBasis*(1-d.land/100)/27.5;
   const years=[]; let cum=0, cumAT=0, suspended=0, depTaken=0, prevBal=r.loan, cumPrinc=0, cumInt=0, prevVal=value;
   r.value0 = value;
@@ -2705,7 +2709,7 @@ const PLAIN = [
   [/^IRR/, "Average yearly return over the whole time you own it, sale included."],
   [/^After-tax IRR/, "The same yearly return after income taxes."],
   [/^Total profit/, "Everything you'd make by the sale, minus the cash you put in."],
-  [/^Cash needed|^Cash left in deal/, "Down payment plus closing costs — what you need in the bank."],
+  [/^Cash needed|^Cash left in deal/, "Down payment plus closing costs, plus any repairs you pay for up front — what you need in the bank."],
   [/^NOI/, "Rent minus costs, before the mortgage."],
   [/^Mortgage/, "Monthly loan payment (principal + interest)."],
   [/^Break-even occupancy/, "How full it must be just to cover the bills."],
@@ -2754,7 +2758,7 @@ function renderSummary(d, r, g){
   } else {
     const inn = r.eff, outC = r.opex, outM = r.debt, who = d.mode==="str" ? "Guests" : "Tenants";
     story = `${who} would pay about <b>${fmt$(r.gross)}</b> a month${d.mode==="str"?" averaged over the year":` (${fmt$(inn)} after allowing for empty months)`}. Property tax, insurance, repairs and other bills take <b>${fmt$(outC)}</b>, and the mortgage takes <b>${fmt$(outM)}</b>. That ${r.cf>=0?`leaves you <b>${fmt$(r.cf)} a month</b>`:`leaves you <b>${M(r.cf)} a month short</b> — money you'd pay from your own pocket`}.`;
-    const cashTxt = d.mode==="brrrr" ? (r.trueCashIn<=0 ? `After the refinance you'd get all your cash back out (${fmt$(-r.trueCashIn)} extra).` : `After the refinance, <b>${fmt$(r.trueCashIn)}</b> of your cash stays in the deal.`) : `You'd need <b>${fmt$(r.cashIn)}</b> up front for the down payment and closing costs.`;
+    const cashTxt = d.mode==="brrrr" ? (r.trueCashIn<=0 ? `After the refinance you'd get all your cash back out (${fmt$(-r.trueCashIn)} extra).` : `After the refinance, <b>${fmt$(r.trueCashIn)}</b> of your cash stays in the deal.`) : `You'd need <b>${fmt$(r.cashIn)}</b> up front for the down payment and closing costs${r.fixUp>0?`, plus ${fmt$(r.fixUp)} for repairs`:""}.`;
     const ret = isNaN(r.irr) ? "" : ` Counting rent, the loan being paid down, rising value and selling after ${r.H} years, that works out to about <b>${pct(r.irr)} a year</b>${r.irr>=.10?", which is a solid return":r.irr>=.05?", a modest return":", which is weak — a savings account may do better"}.`;
     story += ` ${cashTxt}${ret}`;
     const max = Math.max(inn, outC + outM);
@@ -2961,7 +2965,7 @@ function renderDeal0(){
     const u = Math.max(1,d.units), ss = r.selfSuff;
     html = S("Your cost to live there", fmt$(r.hhCost)+"/mo", r.hhCost<=d.myrent?"good":"bad", `after the other ${u-1} unit${u-1===1?"":"s"} pay rent`) +
       S("Savings vs. what you pay now", fmt$(r.hhSave)+"/mo", r.hhSave>=0?"good":"bad", `you pay ${fmt$(d.myrent)} now`) +
-      S("Cash needed", fmt$(r.cashIn), "", `${d.down}% down + ${d.close}% closing`) +
+      S("Cash needed", fmt$(r.cashIn), "", `${d.down}% down + ${d.close}% closing${r.fixUp>0?` + ${fmtK(r.fixUp)} repairs`:""}`) +
       S("Mortgage + insurance / mo", fmt$(r.debt), "", `${fmtK(r.loan)} loan${d.uf?` incl. ${d.uf}% fee`:""} · MI ${fmt$(r.mi||0)}/mo`) +
       S("FHA self-sufficiency test", ss ? (ss.pass?"Pass":"Fail") : "n/a", ss ? (ss.pass?"good":"bad") : "", ss ? `75% of rents ${fmt$(ss.have)} vs payment ${fmt$(ss.need)}` : (d.loan!=="fha"?"FHA loans only":"only 3–4 unit buildings")) +
       S("Cash flow after you move out", fmt$(r.cf), r.cf>=0?"good":"bad", "all units rented") +
@@ -3270,7 +3274,7 @@ function ownSummary(d){
 const summaryFor = d => d.mode==="own" ? ownSummary(d) : dealSummary(d, computeDeal(d));
 function dealSummary(d, r){
   const modeName = {rental:"Buy & hold rental",househack:"House hack",brrrr:"BRRRR",flip:"Fix & flip",str:"Short-term rental"}[d.mode];
-  let s = `${modeName} — ${d.county}\nPrice: ${fmt$(d.price)}\n`;
+  let s = `${modeName} — ${d.county}\nPrice: ${fmt$(d.price)}${r.fixUp>0?` · Repairs: ${fmt$(r.fixUp)}${d.rarv>d.price?` · Value after repairs: ${fmt$(d.rarv)}`:""}`:""}\n`;
   if (d.mode==="flip") s += `Rehab: ${fmt$(d.rehab)} · ARV: ${fmt$(d.arv)} · ${d.months} months\nNet profit: ${fmt$(r.profit)} · ROI: ${pct(r.roi)} · Annualized: ${pct(r.annROI)}\nCash needed: ${fmt$(r.cashIn)} · 70% rule max: ${fmt$(r.rule70)}`;
   else s += `Gross revenue: ${fmt$(r.gross)}/mo · NOI: ${fmt$(r.noi)}/mo · Mortgage: ${fmt$(r.debt)}/mo\nCash flow: ${fmt$(r.cf)}/mo · Cash-on-cash: ${pct(r.coc)} · Cap rate: ${pct(r.cap,2)} · DSCR: ${r.dscr.toFixed(2)}\nIRR (${r.H}-yr): ${isNaN(r.irr)?"n/a":pct(r.irr)} · Profit at exit: ${fmt$(r.profit)}\nCash in deal: ${fmt$(r.trueCashIn)}`;
   if (d.mode==="househack") s += `\nLiving there: ${fmt$(r.hhCost)}/mo (vs ${fmt$(d.myrent)} now) · ${d.loan.toUpperCase()} ${d.down}% down${r.selfSuff?` · FHA self-sufficiency: ${r.selfSuff.pass?"pass":"FAIL"}`:""}\n(cash flow above is after you move out)`;
