@@ -665,6 +665,16 @@ textarea,#pasteText{font-size:16px!important}
 .recbox dt{color:var(--muted)}.recbox dd{margin:0;font-weight:600}
 .recbox .recpick{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .recbox .recpick button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 12px;font:600 13px var(--ui);cursor:pointer;min-height:40px}
+/* long-term projection */
+.projpick{display:flex;flex-direction:column;gap:6px;font-size:15px;margin:0 0 10px}
+.projpick input{width:100%;accent-color:var(--accent);height:28px}
+.projtiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.projtiles .pt{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;background:var(--card)}
+.projtiles .pt b{font-size:21px}.projtiles .pt.big{border-color:var(--accent)}
+.projtiles .pl{font-size:13px;color:var(--muted)}.projtiles .pl i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.projtiles .ps{font-size:12.5px;color:var(--muted)}
+.projh{margin:0 0 6px;font-size:16px}
+#projTable tr.projsel td{background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600}
 /* cash-saved line */
 .cashline{margin:8px 0 0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:14px;line-height:1.5}
 .cashline.w{border-color:#c97a00;background:color-mix(in srgb,#c97a00 10%,var(--card))}
@@ -1163,8 +1173,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   <div class="card mode-only" data-modes="rental househack brrrr str">
     <h2>Long-term projection</h2>
     <p class="hint">Sale proceeds deduct commission, NJ realty transfer fee and — on sales over $1M — the seller-paid graduated "mansion tax" (1%–3.5%).</p>
-    <div id="projChart"></div>
-    <div class="tablewrap adv" style="margin-top:12px"><table id="projTable"></table></div>
+    <div id="projSum"></div>
+    <div id="projChart" style="margin-top:14px"></div>
+    <h3 class="projh" style="margin-top:16px">Year by year</h3>
+    <div class="tablewrap"><table id="projTable"></table></div>
+    <button type="button" class="linkbtn" id="projAll">Show all years</button>
   </div>
 
   <div class="card mode-only" data-modes="rental househack brrrr str" id="stressCard">
@@ -2621,7 +2634,8 @@ function computeDeal(d){
   const ordRate = (d.fed + d.nj)/100;
   const costBasis = (m==="brrrr" ? d.price + d.rehab : d.price) + d.price*d.close/100;
   r.dep = costBasis*(1-d.land/100)/27.5;
-  const years=[]; let cum=0, cumAT=0, suspended=0, depTaken=0, prevBal=r.loan;
+  const years=[]; let cum=0, cumAT=0, suspended=0, depTaken=0, prevBal=r.loan, cumPrinc=0, cumInt=0, prevVal=value;
+  r.value0 = value;
   for (let y=1;y<=H;y++){
     const occ = (m==="househack" && y===1) ? Math.max(0,units-1)/units : 1;   // year 1: you live in one unit
     const gFull = gross*Math.pow(1+g,y-1), gy = gFull*occ;
@@ -2634,7 +2648,9 @@ function computeDeal(d){
     const saved = occ<1 ? d.myrent*12 : 0;                                     // rent you no longer pay elsewhere
     cum += cfy + saved;
     const val = value*Math.pow(1+a,y), bal = balanceAfter(r.loan, r.rate, r.term, 12*y);
-    const interest = (r.pi + (r.mi||0))*12*payFrac - (prevBal - bal); prevBal = bal;
+    const princ = prevBal - bal, interest = (r.pi + (r.mi||0))*12*payFrac - princ; prevBal = bal;
+    cumPrinc += princ; cumInt += interest;
+    const apprY = val - prevVal; prevVal = val;
     const depY = (y<=27 ? r.dep : 0)*occ; depTaken += depY;
     let taxable = noiy*12 - interest*occ - depY, tax;
     if (taxable < 0 && d.pl!=="yes"){ suspended += -taxable; tax = 0; }
@@ -2642,7 +2658,8 @@ function computeDeal(d){
     else tax = taxable*ordRate;                       // negative = tax savings against other income
     const atcf = cfy - tax; cumAT += atcf;
     const saleCost = val*d.sellc/100 + njRTF(val) + njGradFee(val);
-    years.push({y, rent:gy*12, noi:noiy*12, cf:cfy, saved, cum, val, bal, equity:val-bal, net: val - bal - saleCost, saleCost, interest, taxable, tax, atcf, cumAT});
+    years.push({y, rent:gy*12, noi:noiy*12, cf:cfy, saved, cum, val, bal, equity:val-bal, net: val - bal - saleCost, saleCost, interest, taxable, tax, atcf, cumAT,
+      princ, cumPrinc, cumInt, apprY, paidPct: r.loan>0 ? 1 - bal/r.loan : 1, profit: cum + (val - bal - saleCost) - r.trueCashIn});
   }
   const last = years[H-1];
   // tax at sale
@@ -3074,23 +3091,83 @@ function renderMaxOffer(d, r){
     S("Your price", fmt$(d.price), "", d.price<=pT?"meets target":`${fmt$(d.price-pT)} over target`);
 }
 
+var PROJ_YEAR = null, PROJ_ALL = false, PROJ_R = null;
 function renderProjection(r){
-  const ys = r.years, W=640, Hh=220, P={l:52,r:12,t:12,b:26};
-  const maxV = Math.max(...ys.map(y=>y.val)), minV = Math.min(0, ...ys.map(y=>y.cum));
-  const X = i => P.l + (W-P.l-P.r)*(ys.length===1?0.5:i/(ys.length-1));
-  const Y = v => P.t + (Hh-P.t-P.b)*(1-(v-minV)/((maxV-minV)||1));
-  const line = (k,col,dash="") => `<polyline fill="none" stroke="${col}" stroke-width="2.5" ${dash?`stroke-dasharray="${dash}"`:""} points="${ys.map((y,i)=>X(i)+","+Y(y[k])).join(" ")}"/>`;
-  const ticks = [0,.25,.5,.75,1].map(t=>minV+(maxV-minV)*t);
-  const svg = `<svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="Projection chart">
+  PROJ_R = r;
+  const ys = r.years, H = r.H;
+  if (PROJ_YEAR==null || PROJ_YEAR>H) PROJ_YEAR = H;
+  const hh = r.mode==="househack";
+  // ---- the year picker and the four totals
+  const yv = ys[PROJ_YEAR-1], cfTot = yv.cum, gain = yv.val - r.value0;
+  const cashIn = r.trueCashIn>0 ? r.trueCashIn : 0;
+  const multiple = cashIn>0 ? (cashIn + yv.profit)/cashIn : null;
+  $("projSum").innerHTML = `
+    <label class="projpick"><span>See the totals after <b>year <span id="projYlab">${PROJ_YEAR}</span></b> of ${H}</span>
+      <input type="range" id="projY" min="1" max="${H}" step="1" value="${PROJ_YEAR}" aria-label="Year to show"></label>
+    <div class="projtiles">
+      <div class="pt"><span class="pl"><i style="background:var(--bar)"></i>${hh?"Cash flow + rent saved":"Cash flow collected"}</span><b class="${cfTot>=0?"":"bad"}">${fmt$(cfTot)}</b><span class="ps">${fmt$(yv.cf/12)}/mo in year ${PROJ_YEAR}</span></div>
+      <div class="pt"><span class="pl"><i style="background:var(--bar2)"></i>Loan paid off</span><b>${fmt$(yv.cumPrinc)}</b><span class="ps">${yv.bal<1 ? "Loan fully paid off" : `${Math.round(yv.paidPct*100)}% of the loan · ${fmt$(yv.bal)} left`}</span></div>
+      <div class="pt"><span class="pl"><i style="background:var(--bar3)"></i>Value growth</span><b class="${gain>=0?"":"bad"}">${fmt$(gain)}</b><span class="ps">worth about ${fmtK(yv.val)}</span></div>
+      <div class="pt big"><span class="pl">Total profit if you sold</span><b class="${yv.profit>=0?"good":"bad"}">${fmt$(yv.profit)}</b><span class="ps">${cashIn>0?`Your ${fmtK(cashIn)} grows to about ${fmtK(cashIn+yv.profit)}${multiple?` (${multiple.toFixed(1)}×)`:""}`:"after selling costs"} · before income tax</span></div>
+    </div>
+    <p class="note" style="margin:8px 0 0">By year ${PROJ_YEAR} you'd have paid ${fmt$(yv.cumPrinc + yv.cumInt)} in loan payments: <b>${fmt$(yv.cumPrinc)}</b> went to paying down the loan and ${fmt$(yv.cumInt)} to interest${r.mi?" and mortgage insurance":""}.${yv.bal<1 ? " The loan is fully paid off." : ""}</p>`;
+  const sl = $("projY"); sl.oninput = ()=>{ PROJ_YEAR = +sl.value; renderProjection(PROJ_R); const n = $("projY"); if (n) n.focus(); };
+
+  // ---- chart 1: what you make each year (stacked bars)
+  const narrow = window.innerWidth < 600;
+  const W = narrow ? 360 : 640, Hh = narrow ? 200 : 230, P={l:narrow?46:56,r:8,t:14,b:26}, n=ys.length;
+  const pos = ys.map(y=>Math.max(0,y.cf+y.saved)+Math.max(0,y.princ)+Math.max(0,y.apprY)), neg = ys.map(y=>Math.min(0,y.cf+y.saved)+Math.min(0,y.apprY));
+  const maxB = Math.max(1,...pos), minB = Math.min(0,...neg);
+  const X = i => P.l + (W-P.l-P.r)*(i+0.5)/n, bw = Math.max(3, Math.min(28, (W-P.l-P.r)/n*0.7));
+  const Y = v => P.t + (Hh-P.t-P.b)*(1-(v-minB)/((maxB-minB)||1));
+  const ticks = [0,.25,.5,.75,1].map(t=>minB+(maxB-minB)*t);
+  const seg = (i, v0, v1, col, lab) => v1===v0 ? "" : `<rect x="${X(i)-bw/2}" y="${Math.min(Y(v0),Y(v1))}" width="${bw}" height="${Math.max(1,Math.abs(Y(v0)-Y(v1)))}" fill="${col}"><title>${lab}</title></rect>`;
+  const bars = ys.map((y,i)=>{
+    const c = y.cf+y.saved; let up = 0, dn = 0, out = "";
+    const add = (v,col,lab)=>{ if (v>=0){ out += seg(i,up,up+v,col,lab); up += v; } else { out += seg(i,dn,dn+v,col,lab); dn += v; } };
+    add(c, "var(--bar)", `Year ${y.y} cash flow ${fmt$(c)}`);
+    add(y.princ, "var(--bar2)", `Year ${y.y} loan paid down ${fmt$(y.princ)}`);
+    add(y.apprY, "var(--bar3)", `Year ${y.y} value growth ${fmt$(y.apprY)}`);
+    return out + (y.y===PROJ_YEAR ? `<rect x="${X(i)-bw/2-3}" y="${P.t}" width="${bw+6}" height="${Hh-P.t-P.b}" fill="none" stroke="var(--ink)" stroke-width="1.5" rx="3"/>` : "");
+  }).join("");
+  const every = Math.ceil(n/(narrow?6:10));
+  const lbl = (i,y) => (n<=(narrow?6:12) || i%every===0 || i===n-1) ? `<text x="${X(i)}" y="${Hh-8}" text-anchor="middle" font-size="11" fill="var(--muted)">Y${y.y}</text>` : "";
+  const svg1 = `<svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="What you make each year: cash flow, loan paid down and value growth">
     ${ticks.map(v=>`<line x1="${P.l}" x2="${W-P.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${P.l-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmtK(v)}</text>`).join("")}
-    ${ys.map((y,i)=> (ys.length<=12 || i%Math.ceil(ys.length/10)===0 || i===ys.length-1) ? `<text x="${X(i)}" y="${Hh-8}" text-anchor="middle" font-size="11" fill="var(--muted)">Y${y.y}</text>`:"").join("")}
-    ${line("val","var(--bar3)")}${line("bal","var(--bar2)","5 4")}${line("equity","var(--bar)")}${line("cum","var(--muted)","2 3")}
-  </svg>`;
-  $("projChart").innerHTML = `<div class="legend"><span><i style="background:var(--bar3)"></i>Property value</span><span><i style="background:var(--bar2)"></i>Loan balance</span><span><i style="background:var(--bar)"></i>Equity</span><span><i style="background:var(--muted)"></i>Cumulative cash flow</span></div>${svg}`;
-  const show = ys.filter(y=>y.y<=5 || y.y%5===0 || y.y===r.H);
-  $("projTable").innerHTML = `<thead><tr><th>Year</th><th>Rent / yr</th><th>NOI / yr</th><th>Cash flow / yr</th><th>Value</th><th>Loan</th><th>Equity</th><th>Net if sold</th><th>After-tax CF</th></tr></thead>
-  <tbody>${show.map(y=>`<tr><td>${y.y}</td><td>${fmtK(y.rent)}</td><td>${fmtK(y.noi)}</td><td class="${y.cf>=0?'good':'bad'}">${fmt$(y.cf)}</td><td>${fmtK(y.val)}</td><td>${fmtK(y.bal)}</td><td>${fmtK(y.equity)}</td><td>${fmtK(y.net)}</td><td class="${y.atcf>=0?'good':'bad'}">${fmt$(y.atcf)}</td></tr>`).join("")}</tbody>
-  <tfoot><tr><td colspan="9" style="text-align:left;white-space:normal" class="note">${r.mode==="househack"?`Year 1 is while you live there: cash flow is your own housing cost after the tenants' rent (you also stop paying ${fmt$(r.y1.saved/12)}/mo elsewhere, which the IRR counts). `:""}${r.rcOn?`Rent growth capped at ${(r.g*100).toFixed(1)}%/yr for rent control. `:""}Year ${r.H} sale: est. taxes on sale ${fmt$(r.saleTax)} (depreciation recapture + capital gains + NJ) → after-tax proceeds ${fmt$(r.netAfterTax)}.</td></tr></tfoot>`;
+    <line x1="${P.l}" x2="${W-P.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--muted)"/>
+    ${bars}${ys.map((y,i)=>lbl(i,y)).join("")}</svg>`;
+
+  // ---- chart 2: the loan shrinking while the value grows (equity is the gap)
+  const maxV = Math.max(r.loan, ...ys.map(y=>y.val)), H2 = narrow ? 190 : 210;
+  const X2 = i => P.l + (W-P.l-P.r)*(n===1?0.5:i/(n-1));
+  const Y2 = v => P.t + (H2-P.t-P.b)*(1-v/(maxV||1));
+  const pts = k => ys.map((y,i)=>X2(i)+","+Y2(y[k])).join(" ");
+  const eqArea = ys.map((y,i)=>X2(i)+","+Y2(y.val)).join(" ")+" "+ys.slice().reverse().map((y,j)=>X2(n-1-j)+","+Y2(y.bal)).join(" ");
+  const ti = PROJ_YEAR-1;
+  const svg2 = `<svg viewBox="0 0 ${W} ${H2}" width="100%" role="img" aria-label="Property value and loan balance over time">
+    ${[0,.25,.5,.75,1].map(t=>maxV*t).map(v=>`<line x1="${P.l}" x2="${W-P.r}" y1="${Y2(v)}" y2="${Y2(v)}" stroke="var(--line)"/><text x="${P.l-6}" y="${Y2(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmtK(v)}</text>`).join("")}
+    <polygon points="${eqArea}" fill="var(--bar)" opacity=".16"/>
+    <polyline fill="none" stroke="var(--bar3)" stroke-width="2.5" points="${pts("val")}"/>
+    <polyline fill="none" stroke="var(--bar2)" stroke-width="2.5" points="${pts("bal")}"/>
+    <line x1="${X2(ti)}" x2="${X2(ti)}" y1="${P.t}" y2="${H2-P.b}" stroke="var(--ink)" stroke-dasharray="3 3"/>
+    ${ys.map((y,i)=>(n<=(narrow?6:12) || i%every===0 || i===n-1) ? `<text x="${X2(i)}" y="${H2-8}" text-anchor="middle" font-size="11" fill="var(--muted)">Y${y.y}</text>`:"").join("")}</svg>`;
+
+  $("projChart").innerHTML = `
+    <h3 class="projh">What you make each year</h3>
+    <div class="legend"><span><i style="background:var(--bar)"></i>${hh?"Cash flow (plus rent saved in year 1)":"Cash flow in your pocket"}</span><span><i style="background:var(--bar2)"></i>Loan paid down</span><span><i style="background:var(--bar3)"></i>Value growth</span></div>
+    ${svg1}
+    <p class="note" style="margin:4px 0 14px">Cash flow is money you can spend. Loan paydown and value growth build wealth you collect when you sell or refinance.</p>
+    <h3 class="projh">Your loan shrinking while the value grows</h3>
+    <div class="legend"><span><i style="background:var(--bar3)"></i>Property value</span><span><i style="background:var(--bar2)"></i>Loan balance</span><span><i style="background:var(--bar);opacity:.35"></i>Your equity</span></div>
+    ${svg2}`;
+
+  // ---- year-by-year table
+  const show = PROJ_ALL ? ys : ys.filter(y=>y.y<=5 || y.y%5===0 || y.y===H || y.y===PROJ_YEAR);
+  $("projTable").innerHTML = `<thead><tr><th>Year</th><th>Cash flow</th><th>Loan paid down</th><th>Interest paid</th><th>Loan left</th><th>Paid off</th><th>Value</th><th>Equity</th><th>Profit if sold</th><th>After-tax cash flow</th></tr></thead>
+  <tbody>${show.map(y=>`<tr${y.y===PROJ_YEAR?' class="projsel"':""}><td>${y.y}</td><td class="${y.cf>=0?'good':'bad'}">${fmt$(y.cf)}</td><td>${fmt$(y.princ)}</td><td>${fmt$(y.interest)}</td><td>${y.bal<1?"Paid off":fmtK(y.bal)}</td><td>${Math.round(y.paidPct*100)}%</td><td>${fmtK(y.val)}</td><td>${fmtK(y.equity)}</td><td class="${y.profit>=0?'good':'bad'}">${fmtK(y.profit)}</td><td class="${y.atcf>=0?'good':'bad'}">${fmt$(y.atcf)}</td></tr>`).join("")}</tbody>
+  <tfoot><tr><td colspan="10" style="text-align:left;white-space:normal" class="note">${r.mode==="househack"?`Year 1 is while you live there: cash flow is your own housing cost after the tenants' rent (you also stop paying ${fmt$(r.y1.saved/12)}/mo elsewhere, which the IRR counts). `:""}${r.rcOn?`Rent growth capped at ${(r.g*100).toFixed(1)}%/yr for rent control. `:""}Year ${r.H} sale: est. taxes on sale ${fmt$(r.saleTax)} (depreciation recapture + capital gains + NJ) → after-tax proceeds ${fmt$(r.netAfterTax)}.</td></tr></tfoot>`;
+  $("projAll").textContent = PROJ_ALL ? "Show fewer years" : `Show all ${H} years`;
+  $("projAll").hidden = H<=7;
 }
 
 var LAST_STRESS = null;
@@ -3508,6 +3585,7 @@ $("z-county").innerHTML += DATA.map(c=>`<option>${c.c}</option>`).join("");
 ["z-q","z-county","z-type","z-beds","z-sort","z-max"].forEach(id=>$(id).addEventListener("input",()=>{zShow=60;renderZips();}));
 $("z-sort").addEventListener("change",e=>{ if (e.isTrusted) zSortTouched = true; });
 $("z-max").addEventListener("input",e=>{ if (e.isTrusted) zMaxTouched = true; });
+$("projAll").onclick = ()=>{ PROJ_ALL = !PROJ_ALL; if (PROJ_R) renderProjection(PROJ_R); };
 $("badvBtn").onclick = ()=>{ const on = document.body.classList.toggle("show-badv"); $("badvBtn").setAttribute("aria-expanded", on); $("badvBtn").textContent = on ? "Fewer loan options ▴" : "More loan options ▾"; };
 $("d-price").addEventListener("focus", e=>{ if (document.body.classList.contains("deal-empty")) e.target.select(); });
 $("d-myrent").addEventListener("input", e=>{ if (e.isTrusted) e.target.dataset.t = "1"; });
