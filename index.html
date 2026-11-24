@@ -675,6 +675,7 @@ textarea,#pasteText{font-size:16px!important}
 .projtiles .ps{font-size:12.5px;color:var(--muted)}
 .projh{margin:0 0 6px;font-size:16px}
 #projTable tr.projsel td{background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600}
+.ov-lender{font-size:13.5px;line-height:1.5;color:var(--muted);background:color-mix(in srgb,var(--accent) 6%,transparent);border-radius:10px;padding:8px 10px}
 /* cash-saved line */
 .cashline{margin:8px 0 0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:14px;line-height:1.5}
 .cashline.w{border-color:#c97a00;background:color-mix(in srgb,#c97a00 10%,var(--card))}
@@ -815,6 +816,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       <label>Home price I'm looking at ($, optional)<input id="b-price" type="number" step="10000" placeholder="e.g. 450000"></label>
       <label>Miles from Midtown Manhattan (straight line, optional)<input id="b-nyc" type="number" step="5" min="0" placeholder="e.g. 25"></label>
       <label>Loan type<select id="b-loan"><option value="conv">Conventional</option><option value="fha">FHA (3.5% down)</option><option value="va">VA (0% down)</option></select></label>
+      <label>Credit score<select id="b-credit"><option value="">Not sure</option><option value="760">760 or higher</option><option value="720">720–759</option><option value="680">680–719</option><option value="640">640–679</option><option value="620">620–639</option></select></label>
       <label>Down payment (%)<input id="b-down" type="number" value="10" step="0.5"></label>
       <label>Interest rate (%)<input id="b-rate" type="number" value="7.28" step="0.125"></label>
       <label>Min. safety score: <b id="b-safe-v">25</b><input id="b-safe" type="range" min="0" max="90" value="25"></label>
@@ -1046,6 +1048,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       <div class="grid">
         <label class="mode-only" data-modes="own">Household income / yr ($)<input id="d-inc" type="number" value="0" step="5000" placeholder="e.g. 120000"></label>
         <label class="mode-only" data-modes="own">Other monthly debt payments ($)<input id="d-debt" type="number" value="0" step="50" placeholder="car, cards, student loans"></label>
+        <label class="mode-only" data-modes="own househack">Credit score<select id="d-credit"><option value="">Not sure</option><option value="760">760 or higher</option><option value="720">720–759</option><option value="680">680–719</option><option value="640">640–679</option><option value="620">620–639</option></select></label>
+        <input type="hidden" id="d-yb" value="0">
         <label>Loan type<select id="d-loan"><option value="fha">FHA: 3.5% down, easier to qualify</option><option value="conv">Conventional: 5% down</option><option value="va">VA: 0% down, for veterans and service members</option></select></label>
         <label class="bhide">Mortgage insurance (% of loan / yr)<input id="d-mi" type="number" value="0.55" step="0.05"></label>
         <label class="bhide">Upfront loan fee, added to loan (%)<input id="d-uf" type="number" value="1.75" step="0.05"></label>
@@ -2414,6 +2418,7 @@ function placeQuick(buyer){
   });
 }
 function carryBuyerInputs(){
+  try{ if ($("b-credit").value && !$("d-credit").value) $("d-credit").value = $("b-credit").value; }catch(e){}
   [["b-inc","d-inc",null],["b-debt","d-debt",null],["b-price","d-price","550000"]].forEach(([from,to,def])=>{
     const a=$(from), t=$(to); if (!a||!t) return; const v=+a.value; if (!(v>0)) return;
     const cur=t.value; if (cur===""||cur==="0"||(def!==null&&cur===def)||cur===lastCarry[to]){ t.value=v; lastCarry[to]=String(v); }
@@ -2522,8 +2527,8 @@ function renderAllTable(){
 const DEAL_IDS = ["d-county","d-price","d-units","d-rent","d-rehab","d-arv","d-months","d-adr","d-occ","d-stay","d-cfee","d-ccost","d-supp",
   "d-tax","d-ins","d-hoa","d-maint","d-vac","d-mg","d-util","d-down","d-rate","d-term","d-term2","d-hmltv","d-hmrate","d-refiltv","d-refirate","d-close",
   "d-appr","d-rentg","d-expg","d-hold","d-sellc","d-target","d-beds","d-fed","d-nj","d-land","d-pl","d-zip",
-  "d-loan","d-mi","d-uf","d-myrent","d-rc","d-rccap","d-assess","d-gen","d-fz","d-flood","d-pre78","d-fees","d-sqft","d-inc","d-debt","d-repairs","d-rarv"];
-const STR_IDS = ["d-county","d-pl","d-zip","d-loan","d-rc","d-fz","d-pre78"];
+  "d-loan","d-mi","d-uf","d-myrent","d-rc","d-rccap","d-assess","d-gen","d-fz","d-flood","d-pre78","d-fees","d-sqft","d-inc","d-debt","d-repairs","d-rarv","d-credit","d-yb"];
+const STR_IDS = ["d-county","d-pl","d-zip","d-loan","d-rc","d-fz","d-pre78","d-credit"];
 function readDeal(){
   const o={mode:dealMode}; DEAL_IDS.forEach(id=>{const el=$(id); o[id.slice(2)] = STR_IDS.includes(id)?el.value:(+el.value||0);});
   const c = refPlace(); o.rcInfo = c && c.isZip ? c.rcInfo : null;
@@ -2859,6 +2864,7 @@ function renderOwnVerdict(d, o, a){
     <div class="ov-sub">${fmt$(o.price)} with ${d.down}% down at ${rate}%${z?` · ZIP ${z}`:""}</div></div>
     ${gauge}
     <div class="ov-sent">${sent}</div>
+    ${a.hasInc ? (()=>{ const lm = ownMaxPrice(d, a.gross, 1, 0.43); return `<div class="ov-lender"><b>Lender view:</b> many lenders approve total debts up to about 43% of income, which here means a price up to about <b>${fmt$(lm)}</b>. Some loans (FHA especially) go higher with strong credit or savings. "Comfortable" uses the stricter 28% / 36% guide.</div>`; })() : ""}
     <div><div class="ov-eyebrow">WHERE THE ${fmt$(o.total)} GOES EACH MONTH</div><div class="ov-bar">${bar}</div>${leg}</div>
     <div class="ov-cash"><div class="ov-eyebrow">CASH NEEDED UP FRONT</div><div class="n">${fmt$(o.downAmt+o.closeAmt)}</div><div class="d">${fmt$(o.downAmt)} down payment (${d.down}%) plus about ${fmt$(o.closeAmt)} in closing costs.${(()=>{ const sv = AUD==="buyer" && $("b-cash") ? (+$("b-cash").value||0) : 0, need = o.downAmt+o.closeAmt; return sv>0 ? (sv>=need ? ` <b>You have ${fmt$(sv)} saved, enough with ${fmt$(sv-need)} to spare.</b>` : ` <b>You have ${fmt$(sv)} saved, about ${fmt$(need-sv)} short.</b>`) : ""; })()}</div></div>
     <div class="ov-note">Estimates from public data, not listings or advice. A lender decides what you actually qualify for.</div>`;
@@ -2941,7 +2947,7 @@ function renderPriceCheck(){
   const sh = soldShare(sd, price);
   el.innerHTML = `<b>Where this price falls:</b> in ${c.taxDistrict}, ${soldShareTxt(sh)} of homes sold in the last 12 months went for less than ${fmt$(price)}. The middle half sold for ${soldRange(sd)}, the median was ${fmtK(sd.p[2])} (${sd.n} sales${sd.few?"; few sales, so treat this as rough":""}). These are town-wide sales of homes and condos of every size and condition, so compare with similar homes, not this alone.`;
 }
-function renderDeal(){ try{ renderDeal0(); } finally { try{ syncDealEmpty(); }catch(e){} } }
+function renderDeal(){ try{ syncLoanDefaults(); }catch(e){ console.warn(e); } try{ renderDeal0(); } finally { try{ syncDealEmpty(); }catch(e){} } }
 function renderDeal0(){
   try{ renderPriceCheck(); }catch(e){ console.warn(e); }
   const d = readDeal(), r = computeDeal(d);
@@ -3518,6 +3524,31 @@ document.querySelectorAll("#strategy button").forEach(b=>b.onclick=()=>{
 $("f-typefilter").innerHTML += TYPES.map(t=>`<option value="${t.k}">${t.n}</option>`).join("");
 $("placeList").innerHTML = ZIPP.map(z=>`<option value="${z.area} ${z.zip}">`).join("");
 const LOANS = {fha:{down:3.5,mi:0.55,uf:1.75}, conv:{down:5,mi:0.6,uf:0}, va:{down:0,mi:0,uf:2.15}};
+// ---- credit score: extra interest over Freddie Mac's weekly average (which reflects strong-credit borrowers), private
+// mortgage insurance at 10% down, and a homeowners-insurance factor. Spreads follow published myFICO / Curinos tables
+// (620 vs 760+ is about 1 point); PMI follows NerdWallet / Urban Institute tables; poor credit raises NJ home insurance ~80%.
+const CREDIT = {
+  "760":{conv:0,    gov:0,     pmi:0.30, ins:1.00},
+  "720":{conv:0.15, gov:0,     pmi:0.45, ins:1.00},
+  "680":{conv:0.35, gov:0,     pmi:0.80, ins:1.15},
+  "640":{conv:0.60, gov:0.125, pmi:1.31, ins:1.40},
+  "620":{conv:1.00, gov:0.25,  pmi:1.50, ins:1.80}
+};
+const creditOf = v => CREDIT[v] || CREDIT["720"];          // "Not sure" is treated as 720-759
+const rateFor = (loan, credit) => +((NJ.mortgage30||7) + (loan==="conv" ? creditOf(credit).conv : creditOf(credit).gov)).toFixed(3);
+function miFor(loan, down, credit){
+  if (loan==="fha") return 0.55; if (loan==="va") return 0; if (down>=20) return 0;
+  const ltv = 100-down, f = ltv>95 ? 1.3 : ltv>90 ? 1.15 : ltv>85 ? 1 : 0.55;
+  return +(creditOf(credit).pmi*f).toFixed(2);
+}
+// homeowners insurance: about 0.40% of the price a year, more at the shore and in older homes, less for new ones
+const INS_COUNTY = {"Cape May":1.4, "Atlantic":1.35, "Ocean":1.25, "Monmouth":1.15, "Essex":1.15, "Hudson":1.1, "Passaic":1.1, "Union":1.1, "Camden":1.05};
+function insFor(price, county, yearBuilt, credit){
+  let f = INS_COUNTY[county] || 1;
+  if (yearBuilt>1700){ const age = new Date().getFullYear() - yearBuilt; f *= age<10 ? 0.75 : age<40 ? 1 : age<80 ? 1.1 : 1.2; }
+  f *= creditOf(credit).ins;
+  return Math.max(1200, Math.round(price*0.004*f/50)*50);
+}
 $("d-loan").onchange = ()=>{ const L=LOANS[$("d-loan").value]; $("d-down").value=L.down; $("d-mi").value=L.mi; $("d-uf").value=L.uf; renderDeal(); };
 document.querySelectorAll("#dealMode button").forEach(b=>b.onclick=ev=>{
   if (ev && ev.isTrusted) dealPicked = true;
@@ -3527,7 +3558,7 @@ document.querySelectorAll("#dealMode button").forEach(b=>b.onclick=ev=>{
     if (+$("d-units").value<2) $("d-units").value=2; if (+$("d-rate").value>=7) $("d-rate").value = Math.max(0, +(+$("d-rate").value-0.25).toFixed(3)); }
   else if (prev==="househack"){ $("d-down").value=25; if (+$("d-mg").value===0) $("d-mg").value=8; }
   if (b.dataset.m==="own"){ const L=LOANS.conv; $("d-loan").value="conv"; $("d-down").value=10; $("d-mi").value=L.mi; $("d-uf").value=L.uf; $("d-rate").value=+(NJ.mortgage30||7).toFixed(3); }
-  else if (prev==="own" && b.dataset.m!=="househack"){ $("d-down").value=25; $("d-rate").value=7.5; if ($("d-loan").value==="conv") {} }
+  else if (prev==="own" && b.dataset.m!=="househack"){ $("d-down").value=25; $("d-rate").value=+((NJ.mortgage30||7)+0.5).toFixed(3); if ($("d-loan").value==="conv") {} }
   syncFees();
   if (b.dataset.m==="str"){ $("d-mg").value = 20; $("d-maint").value = 6; $("d-util").value = 350; }
   else if (+$("d-mg").value===20){ $("d-mg").value = 8; $("d-maint").value = 10; $("d-util").value = 150; }
@@ -3536,6 +3567,21 @@ document.querySelectorAll("#dealMode button").forEach(b=>b.onclick=ev=>{
   }
   renderDeal();
 });
+const MANUAL = new Set();
+["d-rate","d-mi","d-ins","b-rate"].forEach(id=>{ const e=$(id); if (e) e.addEventListener("input", ev=>{ if (ev.isTrusted) MANUAL.add(id); }); });
+function syncLoanDefaults(){
+  if (dealMode!=="own" && dealMode!=="househack") return;
+  const loan = $("d-loan").value, cr = $("d-credit").value, down = +$("d-down").value||0, price = +$("d-price").value||0;
+  if (!MANUAL.has("d-rate")) $("d-rate").value = rateFor(loan, cr) - (dealMode==="househack" && loan!=="conv" ? 0.25 : 0);
+  if (!MANUAL.has("d-mi")) $("d-mi").value = miFor(loan, down, cr);
+  if (!MANUAL.has("d-ins") && price>0){
+    const rp = refPlace() || {}, county = rp.isZip ? rp.county : (rp.c || $("d-county").value);
+    $("d-ins").value = insFor(price, county, +$("d-yb").value||0, cr) + (rp.isZip ? (rp.floodAdd||0) : 0);
+  }
+}
+function syncBuyerRate(){ if (!MANUAL.has("b-rate")) $("b-rate").value = rateFor($("b-loan").value, $("b-credit").value); }
+try{ syncBuyerRate(); }catch(e){}
+["b-loan","b-credit"].forEach(id=>$(id).addEventListener("change", ()=>{ syncBuyerRate(); if (typeof renderBuyer==="function") renderBuyer(); }));
 function refPlace(){ const z=$("d-zip").value.trim(); return (z.length===5 && ZIPP.find(p=>p.zip===z)) || findPlace($("d-county").value); }
 $("d-zip").addEventListener("input", ()=>{
   const z=$("d-zip").value.trim(); if (z.length!==5) return;
@@ -4053,8 +4099,8 @@ function renderAccuracy(){
 renderAccuracy();
 
 // ================= BUYER: where can I afford to buy? =================
-const BUY_IDS = ["b-inc","b-price","b-nyc","b-debt","b-cash","b-loan","b-down","b-rate","b-safe","b-flood","b-pri"];
-const BUY_TEXT = ["b-loan","b-flood","b-pri"];
+const BUY_IDS = ["b-inc","b-price","b-nyc","b-debt","b-cash","b-loan","b-down","b-rate","b-safe","b-flood","b-pri","b-credit"];
+const BUY_TEXT = ["b-loan","b-flood","b-pri","b-credit"];
 let buyN = 5;
 // ---- recent sold prices by town (NJ Division of Taxation SR-1A, usable class-2 sales, last 12 months)
 // approximate share of recent sales below a price, from the five percentile points (0.05 = "under 10%", 0.95 = "over 90%")
@@ -4080,7 +4126,7 @@ function readBuyer(){ const o={}; BUY_IDS.forEach(id=>{ const el=$(id); o[id.sli
 // a deal-shaped object for one ZIP at its typical home value, so the same payment math as "Buy to live here" is used
 function buyerD(c, b){
   const L = LOANS[b.loan] || LOANS.conv, flood = c.isZip ? 1 : 1 + 0.25*(c.flood||0), P = b.price>0 ? b.price : c.price;
-  return {price:P, down:b.down, rate:b.rate, term:30, loan:b.loan, mi:L.mi, uf:L.uf, tax:c.tax, ins:Math.max(1800, Math.round(P*0.0045*flood/50)*50) + (c.isZip ? (c.floodAdd||0) : 0),
+  return {price:P, down:b.down, rate:b.rate, term:30, loan:b.loan, mi:miFor(b.loan, b.down, b.credit), uf:L.uf, tax:c.tax, ins:Math.round(insFor(P, c.isZip ? c.county : c.c, 0, b.credit)*flood/50)*50 + (c.isZip ? (c.floodAdd||0) : 0),
     flood:0, hoa:0, close:3, itemClose:true, assess:0, gen:0, inc:b.inc, debt:b.debt};
 }
 function buyerRows(b){
@@ -4310,8 +4356,8 @@ function renderHero(){
 { // buyer inputs: restore, remember, re-rank as the visitor types
   const saved = store.get("binp", {});
   BUY_IDS.forEach(id=>{ const k=id.slice(2); if (saved[k]!==undefined && saved[k]!=="" && !(k==="inc" && !saved[k])) $(id).value = saved[k]; });
-  if (saved.rate===undefined) $("b-rate").value = +(NJ.mortgage30||7).toFixed(3);
-  const upd = ()=>{ buyN = 5; try{ store.set("binp", readBuyer()); }catch(e){} renderBuyer(); try{ if (mapBuilt) renderMap(); }catch(e){} };
+  if (saved.rateManual) MANUAL.add("b-rate"); else syncBuyerRate();
+  const upd = ()=>{ buyN = 5; try{ store.set("binp", {...readBuyer(), rateManual: MANUAL.has("b-rate")}); }catch(e){} renderBuyer(); try{ if (mapBuilt) renderMap(); }catch(e){} };
   BUY_IDS.forEach(id=>$(id).addEventListener(id==="b-loan"?"change":"input", ()=>{
     if (id==="b-loan"){ $("b-down").value = {conv:10, fha:3.5, va:0}[$("b-loan").value]; }
     upd(); }));
@@ -4390,7 +4436,7 @@ function applyListing(o, msgEl){
   if (ok(o.hoa)){ $("d-hoa").value = Math.round(+o.hoa); got.push("HOA"); }
   if (ok(o.assessed) && +o.assessed>=5000){ $("d-assess").value = Math.round(+o.assessed); got.push("assessed value"); }
   if (ok(o.sqft) && +o.sqft>=300){ $("d-sqft").value = Math.round(+o.sqft); got.push(Math.round(+o.sqft)+" sq ft"); }
-  if (ok(o.yearBuilt)){ $("d-pre78").value = +o.yearBuilt<1978 ? "yes" : "no"; got.push("built "+o.yearBuilt); }
+  if (ok(o.yearBuilt)){ $("d-pre78").value = +o.yearBuilt<1978 ? "yes" : "no"; $("d-yb").value = +o.yearBuilt; got.push("built "+o.yearBuilt); }
   syncFees();
   if (ok(o.rent) && +o.rent>300){ const u = Math.max(1, +$("d-units").value||1); $("d-rent").value = Math.round(+o.rent/u/25)*25; got.push("rent estimate"); } else { $("useMarket").click(); miss.push("rent (filled with the ZIP's typical rent — confirm with comps)"); }
   if (ok(o.price)){ const p=+o.price; { const rp = refPlace()||{}; $("d-ins").value = Math.round(p*0.0045*(rp.isZip ? 1 : 1+0.25*(rp.flood||0))/50)*50 + (rp.isZip ? (rp.floodAdd||0) : 0); } }
