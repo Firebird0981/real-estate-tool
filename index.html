@@ -4540,7 +4540,7 @@ async function lookupAddress(){
     }
     // the property's own public tax record
     let rec = null, recNote = "";
-    $("recBox").hidden = true;
+    $("recBox").hidden = true; $("recBox").innerHTML = "";
     if (!svc){
       try {
         const rr = await njRecord(a, pa);
