@@ -4447,7 +4447,9 @@ const ST_SUFFIX = /^(st|street|ave|av|avenue|rd|road|dr|drive|ln|lane|ct|court|p
 const ST_DIR = /^(n|s|e|w|ne|nw|se|sw|north|south|east|west|no|so)$/;
 const PROP_CLASS = {"1":"Vacant land","2":"Home (1 to 4 families or a condo)","3A":"Farm (with a house)","3B":"Farmland","4A":"Commercial","4B":"Industrial","4C":"Apartment building (5+ units)","15C":"Public property","15D":"Church or charity","15F":"Other exempt property"};
 function parseStreet(a){
-  const first = a.split(",")[0].trim().toUpperCase().replace(/[.#]/g," ").replace(/\s+/g," ");
+  let first = a.split(",")[0].trim().toUpperCase();
+  const hashU = first.match(/#\s*([A-Z0-9-]+)\s*$/); if (hashU) first = first.replace(/#\s*[A-Z0-9-]+\s*$/," UNIT "+hashU[1]);   // "#58" -> "UNIT 58"
+  first = first.replace(/[.#]/g," ").replace(/\s+/g," ").trim();
   const m = first.match(/^(\d+[A-Z]?(?:-\d+[A-Z]?)?)\s+(.*)$/); if (!m) return null;
   const unitM = m[2].match(/\b(?:UNIT|APT|APARTMENT|STE|SUITE)\s*([A-Z0-9-]+)$/);
   let words = m[2].replace(/\b(?:UNIT|APT|APARTMENT|STE|SUITE)\s*[A-Z0-9-]+$/,"").trim().split(" ").filter(Boolean);
@@ -4462,16 +4464,26 @@ function recDate(d){ d = String(d||""); if (!/^\d{6}$/.test(d)) return null; con
 async function njRecord(a, pa){
   const st = parseStreet(a); if (!st || st.key.length<2) return {status:"noparse"};
   // search the ZIP first, then the town, then all of New Jersey
-  const base = `PROP_LOC LIKE '${st.num} %${st.key}%'`, filters = [];
+  // fast pass: the house number at the start ("110 GARNER AVE", "110-114 GARNER AVE"). Slow pass, only if needed and only
+  // inside the ZIP or town: number at the end of a range ("19--25 PINE GROVE TERR") or condo units ("WEDGEWOOD DRIVE UNIT 58")
+  const n = st.num, k = st.key, u = st.unit ? st.unit.replace(/'/g,"") : null;
+  const fast = `(PROP_LOC LIKE '${n} %${k}%' OR PROP_LOC LIKE '${n}-%${k}%')`;
+  const slow = `(PROP_LOC LIKE '%-${n} %${k}%'${u ? ` OR PROP_LOC LIKE '%${k}%UNIT ${u}%' OR PROP_LOC LIKE '%${k}%#${u}%'` : ""})`;
+  const filters = [];
   if (pa.zip) filters.push(` AND (ZIP5='${pa.zip}' OR ZIP_CODE='${pa.zip}')`);
   const tw = townKey(pa.town||"").toUpperCase().replace(/[^A-Z ]/g,""); if (tw.length>=3) filters.push(` AND MUN_NAME LIKE '%${tw}%'`);
-  if (!filters.length) filters.push("");      // only search all of NJ when no ZIP or town was given
+  const local = filters.length>0;
+  if (!local) filters.push("");      // only search all of NJ when no ZIP or town was given
+  const passes = local ? [fast, slow] : [fast];
   let rows = [];
-  for (const f of filters){
-    const p = new URLSearchParams({where:base+f, outFields:"PROP_LOC,MUN_NAME,COUNTY,PROP_CLASS,NET_VALUE,LAST_YR_TX,BLDG_DESC,YR_CONSTR,SALE_PRICE,DEED_DATE,CALC_ACRE,ZIP5,ZIP_CODE,DWELL", returnGeometry:"false", resultRecordCount:"60", f:"json"});
-    const j = await fetchJSON(NJ_PARCELS+"?"+p, 12000);
-    rows = (j.features||[]).map(f=>f.attributes).filter(r=>r && r.PROP_LOC);
-    if (rows.length) break;
+  search: for (const pat of passes){
+    for (const f of filters){
+      const p = new URLSearchParams({where:pat+f, outFields:"PROP_LOC,MUN_NAME,COUNTY,PROP_CLASS,NET_VALUE,LAST_YR_TX,BLDG_DESC,YR_CONSTR,SALE_PRICE,DEED_DATE,CALC_ACRE,ZIP5,ZIP_CODE,DWELL", returnGeometry:"false", resultRecordCount:"60", f:"json"});
+      if (pat===slow && $("addrMsg")) $("addrMsg").textContent = "Still searching the tax records. Condos and multi-family buildings can take up to 20 seconds…";
+      const j = await fetchJSON(NJ_PARCELS+"?"+p, pat===slow ? 20000 : 12000);
+      rows = (j.features||[]).map(f=>f.attributes).filter(r=>r && r.PROP_LOC);
+      if (rows.length) break search;
+    }
   }
   if (!rows.length) return {status:"none"};
   const ta = " "+townKey(a)+" ";
@@ -4482,7 +4494,9 @@ async function njRecord(a, pa){
     if (pa.town && townKey(pa.town)===tk) sc += 2;
     st.words.forEach(w=>{ if (loc.includes(" "+w+" ")) sc += 1; });
     if (st.unit) sc += loc.includes(" "+st.unit+" ") ? 2 : -1; else if (/\b(UNIT|APT|#)\b/.test(loc)) sc -= 1;
-    if (String(r.PROP_LOC).toUpperCase().startsWith(st.num+" ")) sc += 1;
+    const L = String(r.PROP_LOC).toUpperCase();
+    if (L.startsWith(st.num+" ")) sc += 1;
+    else { const rg = L.match(/^(\d+)[A-Z]?\s*-+\s*(\d+)/); if (rg && +st.num>=+rg[1] && +st.num<=+rg[2]) sc += 1; }
     return {r, sc};
   }).sort((x,y)=>y.sc-x.sc);
   const top = scored[0], ties = scored.filter(x=>x.sc===top.sc);
