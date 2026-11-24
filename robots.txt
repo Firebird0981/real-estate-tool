@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://firebird0981.github.io/real-estate-tool/sitemap.xml
