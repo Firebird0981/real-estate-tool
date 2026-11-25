@@ -62,8 +62,8 @@ function render(){
   var pi=Math.round(o.pi+o.mi),tx=Math.round(o.tax),ins=Math.round(o.ins),tot=pi+tx+ins;
   if(income>0){
     var cmf=maxPrice(d,gross,.28,.36), lnd=maxPrice(d,gross,1,.43);
-    if(h<=.28&&b<=.36){tag="Comfortable";cls="good"} else if(h<=.36&&b<=.43){tag="A stretch";cls="ok"} else {tag="Likely too high";cls="bad"}
-    msg="A typical "+fmt$(T.price)+" home here takes <b>"+Math.round(h*100)+"%</b> of your income. Comfortable for you is up to about <b>"+fmt$(cmf)+"</b>; many lenders would go to about "+fmt$(lnd)+".";
+    if(h<=.28&&b<=.36){tag="Within 28% guide";cls="good"} else if(h<=.36&&b<=.43){tag="Above 28% guide";cls="ok"} else {tag="Above usual limits";cls="bad"}
+    msg="A typical "+fmt$(T.price)+" home here takes <b>"+Math.round(h*100)+"%</b> of your income. The 28% guide points to about <b>"+fmt$(cmf)+"</b> or less; many lenders would go to about "+fmt$(lnd)+". A rule of thumb, not a lending decision.";
   } else msg="A typical "+fmt$(T.price)+" home here, with "+down+"% down. Add your household income to see whether it fits.";
   var chip=$("foryou-chip"); chip.textContent=tag; chip.className="chip "+cls; chip.hidden=!tag;
   $("fy-total").innerHTML=fmt$(o.total)+" <small>a month</small>";

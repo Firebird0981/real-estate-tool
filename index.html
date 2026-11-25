@@ -722,14 +722,14 @@ function enhance(){
   var m=[null,String(ok),String(st),String(tot)];
   var typ=Number(D.typ).toLocaleString('en-US');
   var p=[null,typ];
-  var head=p?('Comfortable up to about $'+p[1]):(ok+' ZIP '+(ok===1?'code fits':'codes fit')+' comfortably');
-  var sub=p?(ok===0?'No ZIP code has a typical home that fits comfortably at this income. A home priced up to this amount would, in a town with the middle NJ tax rate.':'That is the price in a town with the middle NJ tax rate. Towns with higher taxes push it lower.'):'Based on the typical home price and tax rate in each ZIP code.';
+  var head=p?('Within the 28% guide up to about $'+p[1]):(ok+' ZIP '+(ok===1?'code is':'codes are')+' within the 28% guide');
+  var sub=p?(ok===0?'No ZIP code has a typical home within the 28% guide at this income. A home priced up to this amount would be, in a town with the middle NJ tax rate.':'That is the price in a town with the middle NJ tax rate. Towns with higher taxes push it lower.'):'Based on the typical home price and tax rate in each ZIP code.';
   var extra='';
   var h='<p class="v51-eyebrow">YOUR RESULT</p>'
    +'<h3 class="v51-head">'+head+'</h3>'
    +'<p class="v51-sub">'+sub+'</p>'+extra
-   +'<div class="v51-bar" role="img" aria-label="'+ok+' comfortable, '+st+' a stretch, '+out+' out of reach">'+seg(ok,'var(--accent)')+seg(st,'var(--bar2)')+seg(out,'var(--slate)')+'</div>'
-   +'<div class="v51-legend">'+item(ok,'Comfortable','Fits your income with room to spare','var(--accent)')+item(st,'Stretch','Possible, but tight','var(--ink)')+item(out,'Out of reach','Payment too high at this income','var(--muted)')+'</div>'
+   +'<div class="v51-bar" role="img" aria-label="'+ok+' within the 28% guide, '+st+' above it, '+out+' above the usual limits">'+seg(ok,'var(--accent)')+seg(st,'var(--bar2)')+seg(out,'var(--slate)')+'</div>'
+   +'<div class="v51-legend">'+item(ok,'Within 28% guide','Housing up to 28% of income','var(--accent)')+item(st,'Above 28% guide','Up to 36% of income, within many lenders\' limits','var(--ink)')+item(out,'Above usual limits','Over 36% of income','var(--muted)')+'</div>'
    +'<p class="v51-out">Out of '+m[3]+' ZIP codes that pass your safety and flood filters.</p>'
    +'<p class="v51-note">Estimates from public data, not listings or advice. A lender decides what you actually qualify for.</p>';
   var w=document.createElement('div');
@@ -760,7 +760,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   </div>
   <div class="hero-copy">
     <span class="eyebrow">New Jersey real estate · free</span>
-    <p class="lede">Check the real numbers <em>before</em> you buy a New Jersey home.</p>
+    <p class="lede">Check the numbers <em>before</em> you buy a New Jersey home.</p>
     <p class="sub">Free tools built on real NJ tax rates, rents, crime and today's mortgage rates. Pick the one that fits what you're doing.</p>
     <div class="entries" role="group" aria-label="What are you doing?">
       <div class="entry e-buy">
@@ -799,7 +799,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <button type="button" class="btn sm" id="pickUp" onclick="window.scrollTo({top:0,behavior:'smooth'});var e=document.getElementById('enBuy');if(e)e.focus({preventScroll:true})">Choose now</button>
     <div class="pickrow" style="display:none">
       <button type="button" data-pick="buyer"><b>A home to live in</b>Find the NJ towns that fit your income, then see the monthly cost and cash to close.</button>
-      <button type="button" data-pick="investor"><b>A rental to invest in</b>Find where rentals pay, with the numbers stress-tested.</button>
+      <button type="button" data-pick="investor"><b>A rental to invest in</b>Find where rentals pay, with a bad-year case built in.</button>
     </div>
   </div>
   <div class="audbar"><b>I'm looking for:</b><div class="seg" id="audSeg" role="group" aria-label="What are you buying?"><button type="button" data-a="buyer">A home to live in</button><button type="button" data-a="investor">A rental</button></div></div>
@@ -819,9 +819,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       <label>Credit score<select id="b-credit"><option value="">Not sure</option><option value="760">760 or higher</option><option value="720">720–759</option><option value="680">680–719</option><option value="640">640–679</option><option value="620">620–639</option></select></label>
       <label>Down payment (%)<input id="b-down" type="number" value="10" step="0.5"></label>
       <label>Interest rate (%)<input id="b-rate" type="number" value="7.28" step="0.125"></label>
-      <label>Min. safety score: <b id="b-safe-v">25</b><input id="b-safe" type="range" min="0" max="90" value="25"></label>
-      <label>Avoid high flood-risk areas<select id="b-flood"><option value="no">No</option><option value="yes">Yes</option></select></label>
-      <label>What matters most<select id="b-pri"><option value="liv">Best overall</option><option value="room">Lowest share of my income</option><option value="safe">Safest</option><option value="growth">Fastest price growth</option><option value="tax">Lowest property-tax rate</option></select></label>
+      <label>Min. crime-data score: <b id="b-safe-v">25</b><input id="b-safe" type="range" min="0" max="90" value="25"></label>
+      <label>Hide areas with many flood-zone homes<select id="b-flood"><option value="no">No</option><option value="yes">Yes</option></select></label>
+      <label>What matters most<select id="b-pri"><option value="liv">Best overall</option><option value="room">Lowest share of my income</option><option value="safe">Lowest reported crime</option><option value="growth">Fastest price growth</option><option value="tax">Lowest property-tax rate</option></select></label>
     </div>
     </details>
     <div id="buyerSummary" style="margin-top:14px"></div>
@@ -858,8 +858,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       <label class="adv">Loan term (yrs)<input id="f-term" type="number" value="30" step="5"></label>
       <label>Management
         <select id="f-mgmt"><option value="pro">Hire property manager</option><option value="self">Self-manage</option></select></label>
-      <label>Min. safety score: <b id="f-safe-v">15</b><input id="f-safe" type="range" min="0" max="90" value="15"></label>
-      <label class="adv">Avoid high flood-risk areas
+      <label>Min. crime-data score: <b id="f-safe-v">15</b><input id="f-safe" type="range" min="0" max="90" value="15"></label>
+      <label class="adv">Hide areas with many flood-zone homes
         <select id="f-flood"><option value="no">No</option><option value="yes">Yes</option></select></label>
       <label class="adv">Search across
         <select id="f-level"><option value="zip">547 ZIP codes (most precise)</option><option value="county">21 counties + your towns</option></select></label>
@@ -950,7 +950,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
         <option value="v2">Price (highest first)</option>
         <option value="g">1-yr price growth (highest first)</option>
         <option value="t">Tax rate (lowest first)</option>
-        <option value="s">Safety (safest first)</option></select></label>
+        <option value="s">Reported crime (lowest first)</option></select></label>
       <label>Max price ($)<input id="z-max" type="number" step="25000" placeholder="any"></label>
     </div>
     <p class="note" id="z-count" style="margin:12px 0 8px"></p>
@@ -1188,7 +1188,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
   <div class="card mode-only" data-modes="rental househack brrrr str" id="stressCard">
     <h2>Stress test</h2>
-    <p class="hint">What happens to this deal when things go wrong. Good deals still work in a bad year.</p>
+    <p class="hint">What happens to this deal when things go wrong. Shows whether a deal still works in a bad year.</p>
     <div id="stressOut"></div>
     <div class="adv"><h3 class="stress-h">Rent and interest rate grid</h3>
     <p class="hint">Monthly cash flow if rent or the rate moves.</p>
@@ -1315,7 +1315,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   </div>
   <div class="card">
     <h2>How the scores work</h2>
-    <p class="note"><b>Safety (0–100)</b> = how a place ranks among NJ ZIPs on police-reported crime per 1,000 residents: 65% violent crime, 35% property crime. 50 is typical; 80 means safer than about 80% of NJ ZIPs. Based on each town's own NJ State Police reports for 2023 and 2024, smoothed toward the county for small towns.<br>
+    <p class="note"><b>Safety (0–100)</b> = how a place ranks among NJ ZIPs on police-reported crime per 1,000 residents: 65% violent crime, 35% property crime. 50 is typical; 80 means a lower reported crime rate than about 80% of NJ ZIPs. Based on each town's own NJ State Police reports for 2023 and 2024, smoothed toward the county for small towns.<br>
     <b>Schools (1–10)</b> = how a school district ranks among NJ districts: 70% test results (share of students meeting state reading and math standards), 15% chronic absence, 15% four-year graduation rate where the district has a high school. Two years of state data, 2023–24 and 2024–25. It describes the whole district, not one school, and public schools only.<br>
     <b>Livability (0–100)</b> = weighted mix of safety, schools, jobs/commute, amenities and affordability (price-to-income ratio). Weights adjustable on Compare.<br>
     <b>Market signals:</b> price-to-rent ratio (under 15× favors cash flow, over 21× is an appreciation market); rent burden = typical rent ÷ median household income (over 30% means a stretched tenant pool); Section 8 edge = HUD 3-bed Fair Market Rent ÷ typical 3-bed market rent.<br>
@@ -1366,12 +1366,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="in">
       <div class="cols">
         <div><div class="brandrow"><svg viewBox="0 0 40 40" width="28" height="28" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#5cc2a6"/><path d="M9 21 20 11l11 10" fill="none" stroke="#0d2b25" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="13" y="24" width="3.6" height="7" rx="1" fill="#0d2b25"/><rect x="18.2" y="21" width="3.6" height="10" rx="1" fill="#0d2b25"/><rect x="23.4" y="17.5" width="3.6" height="13.5" rx="1" fill="#0d2b25"/></svg><span class="ft-brand">Garden State Yield</span></div>
-          <p class="blurb">Free, stress-tested tools for New Jersey home buyers and rental investors. Built on public data.</p></div>
+          <p class="blurb">Free tools for New Jersey home buyers and rental investors. Built on public data.</p></div>
         <div><h4>Explore</h4><a href="#find" data-go="find">Where to buy</a><a href="#map" data-go="map">Map</a><a href="#zips" data-go="zips">Look up a town</a><a href="#deal" data-go="deal">Check a home</a></div>
         <div><h4>Learn</h4><a href="#resources" data-go="resources">Free resources</a><a href="#learn" data-go="learn">Word help</a><a href="#data" data-go="data">Data sources</a></div>
         <div><h4>Company</h4><a href="towns/">Browse all NJ towns</a><a href="#privacy" data-go="privacy">Privacy policy</a><a href="mailto:larose.christian1@gmail.com?subject=Garden%20State%20Yield%20feedback">Send feedback</a><a href="#" id="ftSubscribe">Monthly report</a></div>
       </div>
       <div class="legal">
+        <p><b>About crime and school data:</b> it is imperfect, describes places and not the people who live there, and should not be the only basis for where you choose to live. Scores and guidelines are rules of thumb, not lending decisions, appraisals or advice.</p>
         <p><b>Data as of:</b> home values and rents October 2026 (Zillow Research) · recent sales Nov 2025 to Oct 2026 (NJ Division of Taxation) · mortgage rate 7.28% on Nov 19, 2026 (Freddie Mac) · property-tax rates 2025 (NJ Division of Taxation) · individual property tax records (NJ Office of GIS parcels with MOD-IV, looked up live).</p>
         <p><b>Not financial, tax, legal or real estate brokerage advice.</b> Garden State Yield is an educational estimating tool. Figures are estimates based on public data that may be incomplete, out of date or wrong; actual prices, rents, taxes, insurance and returns vary by property. Verify everything with a licensed real estate agent, attorney, lender and CPA before buying.</p>
         <p>Home value data © Zillow, Inc. (Zillow Home Value Index / Observed Rent Index). Section 8 rents: U.S. Dept. of Housing and Urban Development. Income and rents: U.S. Census Bureau. Crime: NJ State Police Uniform Crime Reporting (FBI for towns you add). Tax rates: NJ Division of Taxation (2025 General and Effective Tax Rates). Mortgage rates: Freddie Mac. Not affiliated with or endorsed by any of these organizations.</p>
@@ -2053,10 +2054,10 @@ const GEO = (()=>{ const A="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
       bb:[Math.min(...all.map(q=>q[0])),Math.min(...all.map(q=>q[1])),Math.max(...all.map(q=>q[0])),Math.max(...all.map(q=>q[1]))]};
   });
   return G; })();
-const FITCATS = [{v:2,l:"Comfortable",c:"#3f9a77",dk:"#4f9a77"},{v:1,l:"A stretch",c:"#e2b24a",dk:"#b98a2c"},{v:0,l:"Over the lender limit",c:"#d7a79d",dk:"#8a4f48"}];
+const FITCATS = [{v:2,l:"Within 28% guide",c:"#3f9a77",dk:"#4f9a77"},{v:1,l:"Above 28% guide",c:"#e2b24a",dk:"#b98a2c"},{v:0,l:"Above usual limits",c:"#d7a79d",dk:"#8a4f48"}];
 const RCCATS = [{v:1,l:"Rent control town",c:"#d9822b",dk:"#d9822b"},{v:0,l:"No rent control",c:"#e9ece6",dk:"#33403a"}];
 let MAPB = null, FITZ = {};
-// does a typical home in this place fit the buyer's income? 2 = comfortable (28% / 36%), 1 = a stretch (36% / 43%), 0 = over, null = no income or no price
+// does a typical home in this place fit the buyer's income? 2 = within the 28% guide (28% / 36%), 1 = above it (36% / 43%), 0 = above the usual limits, null = no income or no price
 function fitFor(c, b){ if (!(b.inc>0) || !(c.price>0)) return null; const o = computeOwn(buyerD(c,b)), g = b.inc/12, h = o.total/g, a = (o.total+b.debt)/g; return (h<=0.28&&a<=0.36) ? 2 : (h<=0.36&&a<=0.43) ? 1 : 0; }
 const payOf = c => computeOwn(buyerD(c, MAPB || readBuyer())).total;
 const MAPM = [
@@ -2072,7 +2073,7 @@ const MAPM = [
   {k:"sch",  l:"Schools", dir:1, z:z=>z.sch, fmt:v=>(+v).toFixed(1)+" of 10", why:"Where the town's school district ranks among NJ districts: state test results, absence and graduation (NJ Dept. of Education, 2023–25). Public schools only."},
   {k:"liv",  l:"Livability", dir:1, z:z=>livability(z), fmt:v=>Math.round(v)+" of 100", why:"A mix of safety, schools, jobs, amenities and affordability. You can change the weights on the Compare tab."},
   {k:"fit",  l:"Does a typical home fit my income?", cat:true, cats:FITCATS, catv:z=>FITZ[z.zip]==null ? null : FITZ[z.zip], catc:c=>fitFor(c, MAPB),
-    why:"Green: the ZIP's typical home fits comfortably (housing up to 28% of income, all debts up to 36%). Amber: a stretch (up to 36% and 43%). Rose: over what most lenders allow. Uses your down payment, loan and rate from the Where to buy tab."},
+    why:"Green: the ZIP's typical home is within the 28% guide (housing up to 28% of income, all debts up to 36%). Amber: above the guide (up to 36% and 43%). Rose: above what most lenders allow. A rule of thumb, not a lending decision. Uses your down payment, loan and rate from the Where to buy tab."},
   {k:"pay",  l:"Monthly cost of a typical home", dir:0, z:z=>payOf(z), fmt:v=>fmt$(v)+"/mo", why:"Mortgage, property tax and insurance on the ZIP's typical home, using the down payment, loan and rate from the Where to buy tab."},
   {k:"sold", l:"Recent sale price (town median)", dir:0, zonly:true, z:z=>{ const sd = soldFor(z.zip); return sd ? sd.p[2] : null; }, fmt:fmtK, why:"The middle sale price in the town over the last 12 months (NJ Division of Taxation records). It covers the whole town, so ZIPs in the same town show the same number. Towns with fewer than 10 sales are blank."},
   {k:"rc",   l:"Towns with rent control", cat:true, cats:RCCATS, catv:z=>(z.rcInfo && !z.rcInfo.legacy ? 1 : 0), catc:c=>(c.rc>=2 ? 1 : 0), why:"Orange ZIPs are in towns with a rent control ordinance."}
@@ -2095,7 +2096,7 @@ function buildMetricChips(){
 let mapLastAud = null;
 function mapAudSync(){ if (mapLastAud!==mapAud()){ mapLastAud = mapAud(); mapMetric = MAP_GROUPS[mapLastAud][0][1][0]; } buildMetricChips(); renderMap(); }
 function buyerZipStats(p, S2){
-  const b = MAPB || readBuyer(), o = computeOwn(buyerD(p,b)), sd = soldFor(p.zip), f = fitFor(p,b), FL = {2:"Comfortable",1:"A stretch",0:"Over the lender limit"};
+  const b = MAPB || readBuyer(), o = computeOwn(buyerD(p,b)), sd = soldFor(p.zip), f = fitFor(p,b), FL = {2:"Within 28% guide",1:"Above 28% guide",0:"Above usual limits"};
   return `<div class="out" style="margin-top:8px">
       ${S2("Typical home price", fmtK(p.price))}${S2("Monthly cost to own", fmt$(o.total))}
       ${f!=null ? S2("For your income", FL[f], f===2?"good":f===1?"":"bad") : ""}${sd ? S2(`Recent sales (${sd.n}, whole town)`, soldRange(sd)) : ""}
@@ -2260,7 +2261,7 @@ function renderMap(){
   // legend
   if (m.cat){
     const cats = m.cats.map(ct=>`<span><i style="background:${dk?ct.dk:ct.c}"></i>${ct.l}</span>`).join(""); let extra = "";
-    if (m.k==="fit"){ const vs = Object.values(MAPVAL), n2 = vs.filter(v=>v===2).length, n1 = vs.filter(v=>v===1).length, n = vs.filter(v=>v!=null).length; extra = ` <b>${n2} of ${n} ZIPs</b> have ${MAPB.price>0 ? "homes around "+fmtK(MAPB.price)+" that you can afford comfortably" : "a typical home you can afford comfortably"}, and ${n1} more are a stretch.${MAPB.price>0 ? " Grey ZIPs are those where few homes sell near your price." : ""}`; }
+    if (m.k==="fit"){ const vs = Object.values(MAPVAL), n2 = vs.filter(v=>v===2).length, n1 = vs.filter(v=>v===1).length, n = vs.filter(v=>v!=null).length; extra = ` <b>${n2} of ${n} ZIPs</b> have ${MAPB.price>0 ? "homes around "+fmtK(MAPB.price)+" within the 28% guide for your income" : "a typical home within the 28% guide for your income"}, and ${n1} more are above it but within many lenders' limits.${MAPB.price>0 ? " Grey ZIPs are those where few homes sell near your price." : ""}`; }
     $("mapLegend").innerHTML = `<div class="lg-t">${m.l}</div><div class="lg-cat">${cats}</div><p class="note">${m.why}${extra}</p>`;
   }
   else {
@@ -2744,7 +2745,7 @@ const STRAT_HELP = {
   appreciation:"Favors places where values grow fastest, even if the rent barely covers costs.",
   househack:"For living in the property: favors 2–4 family homes with a low owner-occupant down payment."
 };
-const GRADE_WORD = {A:"Strong deal", B:"Good deal", C:"Borderline", D:"Weak deal", F:"Doesn't work at this price"};
+const GRADE_WORD = {A:"Well above benchmarks", B:"Above benchmarks", C:"Near benchmarks", D:"Below benchmarks", F:"Doesn't meet benchmarks at this price"};
 function renderSummary(d, r, g){
   const M = v => fmt$(Math.abs(v));
   let story = "", rows = [], left, leftLabel = "You keep / mo";
@@ -2833,9 +2834,9 @@ function ownAfford(d, o){
   let cls="v-ok", tag="", msg=`Add your household income under <b>Your loan and budget</b> to see whether this price fits.`;
   if (hasInc){
     const hp = pct(h,0), bp = pct(b,0);
-    if (h<=0.28 && b<=0.36){ cls="v-good"; tag="Comfortable"; msg=`<b>Comfortable.</b> Housing would take about ${hp} of your income, within the usual 28% guide.`; }
-    else if (h<=0.36 && b<=0.43){ cls="v-ok"; tag="A stretch"; msg=`<b>A stretch.</b> Housing would take about ${hp} of your income, above the usual 28% guide but within what many lenders accept. A price near ${fmt$(maxP)} would be more comfortable.`; }
-    else { cls="v-bad"; tag="Likely too high"; msg=`<b>Likely too high.</b> Housing would take about ${hp} of your income and all debts ${bp}. Many lenders look for 43% or less. A price near ${fmt$(maxP)} would fit better.`; }
+    if (h<=0.28 && b<=0.36){ cls="v-good"; tag="Within 28% guide"; msg=`<b>Within the 28% guide.</b> Housing would take about ${hp} of your income, within the usual 28% guide. A rule of thumb, not a lending decision or advice.`; }
+    else if (h<=0.36 && b<=0.43){ cls="v-ok"; tag="Above 28% guide"; msg=`<b>Above the 28% guide.</b> Housing would take about ${hp} of your income, above the usual 28% guide but within what many lenders accept. A price near ${fmt$(maxP)} would fit the 28% guide. A rule of thumb, not a lending decision or advice.`; }
+    else { cls="v-bad"; tag="Above usual limits"; msg=`<b>Above the usual limits.</b> Housing would take about ${hp} of your income and all debts ${bp}. Many lenders look for 43% or less. A price near ${fmt$(maxP)} would fit the 28% guide. A rule of thumb, not a lending decision or advice.`; }
   }
   return {gross, hasInc, h, b, maxP, cls, tag, msg};
 }
@@ -2848,9 +2849,9 @@ function renderOwnVerdict(d, o, a){
   let gauge="";
   if (a.hasInc){
     const sh=a.h, pos=Math.max(0,Math.min(100,sh/0.6*100)), lab=Math.max(8,Math.min(92,pos));
-    gauge=`<div><div class="ov-gauge" role="img" aria-label="Housing would take ${Math.round(sh*100)}% of your income. Comfortable up to 28%, a stretch up to 36%."><div class="ov-gl" style="left:${lab.toFixed(1)}%">You: ${Math.round(sh*100)}%</div><div class="ov-gm" style="left:${pos.toFixed(1)}%"></div><div class="ov-gb"><i style="width:46.67%;background:var(--bar)"></i><i style="width:13.33%;background:var(--bar2)"></i><i style="flex:1;background:var(--slate,#9aabb6)"></i></div></div>
+    gauge=`<div><div class="ov-gauge" role="img" aria-label="Housing would take ${Math.round(sh*100)}% of your income. Within the guide up to 28%, above it up to 36%."><div class="ov-gl" style="left:${lab.toFixed(1)}%">You: ${Math.round(sh*100)}%</div><div class="ov-gm" style="left:${pos.toFixed(1)}%"></div><div class="ov-gb"><i style="width:46.67%;background:var(--bar)"></i><i style="width:13.33%;background:var(--bar2)"></i><i style="flex:1;background:var(--slate,#9aabb6)"></i></div></div>
       <div class="ov-gz"><span style="width:46.67%">Up to 28%</span><span style="width:13.33%;white-space:nowrap">28–36%</span><span style="flex:1;text-align:right">Over 36%</span></div>
-      <div class="ov-gn">Share of your monthly income that goes to housing. Comfortable is up to 28%.</div></div>`;
+      <div class="ov-gn">Share of your monthly income that goes to housing. The usual guide is up to 28%.</div></div>`;
   }
   const sent = a.hasInc ? a.msg.replace(/^<b>[^<]*<\/b>\s*/,"") : "Add your household income above to see whether this home fits.";
   const rows=[["Mortgage (principal + interest)",o.pi,"var(--v1)"],["Property tax",o.tax,"var(--v2)"],[d.flood>0?"Insurance (includes flood)":"Insurance",o.ins,"var(--v3)"]];
@@ -3011,10 +3012,10 @@ function renderDeal0(){
       S("Depreciation / yr", fmt$(r.dep), "", "27.5-yr schedule") +
       S("Year-1 income tax", tx<0?fmt$(-tx)+" saved":tx>0?fmt$(tx)+" owed":"$0", tx<=0?"good":"", r.y1.taxable<0&&d.pl!=="yes"?"loss suspended to sale":"taxable "+fmt$(r.y1.taxable)) +
       S(`After-tax IRR`, isNaN(r.irrAT)?"—":pct(r.irrAT), r.irrAT>=.09?"good":"", fmtK(r.profitAT)+" after-tax profit");
-    if (r.cf>=0 && (r.coc>=.08) && r.dscr>=1.25){cls="v-good";msg="Strong deal — positive cash flow, solid cash-on-cash return and lender-friendly DSCR.";}
-    else if (r.cf>=0){msg="Workable — cash-flow positive but returns are thin. Check the max offer below and negotiate.";}
-    else if (r.irr>=.10){msg=`Appreciation play — loses ${fmt$(-r.cf)}/mo now but projects a ${pct(r.irr)} IRR. Only works if you can carry it and values keep rising.`;}
-    else {cls="v-bad";msg="Weak deal at this price. See the max offer below for a price that works.";}
+    if (r.cf>=0 && (r.coc>=.08) && r.dscr>=1.25){cls="v-good";msg="Above common benchmarks — positive cash flow, 8%+ cash-on-cash return and a 1.25+ DSCR. Benchmarks are rules of thumb, not a prediction or advice.";}
+    else if (r.cf>=0){msg="Near benchmarks — cash-flow positive but returns are thin. The max offer below shows a price that meets them.";}
+    else if (r.irr>=.10){msg=`Depends on appreciation — loses ${fmt$(-r.cf)}/mo now but projects a ${pct(r.irr)} IRR, which assumes values keep rising and you can carry the loss.`;}
+    else {cls="v-bad";msg="Below benchmarks at this price. See the max offer below for a price that meets them.";}
     if (d.mode==="brrrr" && r.trueCashIn<=0) msg += " You pull all your cash back out at refinance — an infinite cash-on-cash return.";
   }
   const g = dealGrade(d, r);
@@ -3273,7 +3274,7 @@ function ownSummary(d){
   let s = `Buying a home to live in — ${pl.label}\nPrice: ${fmt$(o.price)} · ${d.down}% down (${fmt$(o.downAmt)}) · ${LOAN_NAME[d.loan]||d.loan} loan ${o.rate}%, ${d.term} years\n`;
   s += `Monthly payment: ${fmt$(o.total)} (mortgage ${fmt$(o.pi)} · property tax ${fmt$(o.tax)} · insurance ${fmt$(o.ins)}${o.miOn?` · PMI/MIP ${fmt$(o.mi)}`:""}${o.hoa>0?` · HOA ${fmt$(o.hoa)}`:""})\n`;
   s += `Cash to have saved: ${fmt$(o.cash0+o.total*3)} (down payment, ~${d.close}% closing costs, 3 months of payments)\n`;
-  if (A.hasInc) s += `Affordability: housing ${pct(A.h,0)} of income · all debts ${pct(A.b,0)} · ${A.tag} · comfortable price near ${fmt$(A.maxP)}\n`;
+  if (A.hasInc) s += `Affordability: housing ${pct(A.h,0)} of income · all debts ${pct(A.b,0)} · ${A.tag} · 28%-guide price near ${fmt$(A.maxP)}\n`;
   if (d.myrent>0){ const rv = ownVsRent(d, o); s += `Rent vs. buy (rent now ${fmt$(d.myrent)}/mo): break-even ${rv.breakEven ? "about year "+rv.breakEven : "not within 30 years"}\n`; }
   return s + `(${CONFIG.brand} — estimates, not financial advice)`;
 }
@@ -3727,7 +3728,7 @@ const GLOSSARY = [
  {id:"burden", t:"Rent burden", c:"Market data", d:"Typical rent as a share of the median household income. Above 30% means tenants are stretched, which can mean slower rent growth and more turnover.", go:"map"},
  {id:"inventory", t:"Inventory (homes for sale)", c:"Market data", d:"How many homes are listed. Low inventory favors sellers; rising inventory gives buyers more negotiating room."},
  {id:"livability", t:"Livability score", c:"Market data", d:"This tool's 0–100 blend of safety, schools, jobs and commute, amenities and affordability. You can change the weights on the Compare tab.", go:"compare"},
- {id:"safety", t:"Safety score", c:"Market data", d:"This tool's 0–100 crime score: where a place ranks among NJ ZIPs on police-reported crime per resident (NJ State Police, 2023–24), counting violent crime about twice as much as property crime. 50 is typical; higher is safer. It reflects the whole town, not a block."}
+ {id:"safety", t:"Safety score", c:"Market data", d:"This tool's 0–100 crime score: where a place ranks among NJ ZIPs on police-reported crime per resident (NJ State Police, 2023–24), counting violent crime about twice as much as property crime. 50 is typical; higher means lower reported crime. It reflects the whole town, not a block. Crime data is imperfect and describes places, not the people who live there."}
 ];
 // map result labels to glossary ids for the "?" buttons
 const G_LABELS = {"Monthly cash flow":"cashflow","Cash-on-cash":"coc","Cap rate":"cap","DSCR":"dscr","NOI / mo":"noi","Mortgage / mo":"pmt","Rent-to-price":"onepct","Break-even occupancy":"breakeven",
@@ -3911,7 +3912,7 @@ function ownReportHTML(d, auto){
   const neg = v => v<0 ? "bad" : "good", fitCls = A.cls==="v-good" ? "good" : A.cls==="v-bad" ? "bad" : "";
   const cushion = o.total*3, prep = new Date().toLocaleDateString();
   const tiles = T("Purchase price",fmt$(o.price)) + T("Down payment",fmt$(o.downAmt)+" ("+d.down+"%)") + T("Monthly payment",fmt$(o.total)) +
-    T("Cash to have saved",fmt$(o.cash0+cushion)) + T("Housing / income",A.hasInc?pct(A.h,0):"—",fitCls) + T("Comfortable price",A.hasInc?fmt$(A.maxP):"add income");
+    T("Cash to have saved",fmt$(o.cash0+cushion)) + T("Housing / income",A.hasInc?pct(A.h,0):"—",fitCls) + T("28%-guide price",A.hasInc?fmt$(A.maxP):"add income");
   const pay = `<h2>Monthly payment</h2><table>
     ${tr("Mortgage (principal + interest)",fmt$(o.pi))}${tr("Property tax"+(o.useA?" (from assessed value)":` (${d.tax}% of price)`),fmt$(o.tax))}
     ${tr("Homeowners insurance"+(d.flood>0?" incl. flood":""),fmt$(o.ins))}${tr(d.loan==="fha"?"FHA mortgage insurance (MIP)":"PMI",o.miOn?fmt$(o.mi):"None")}
@@ -3922,7 +3923,7 @@ function ownReportHTML(d, auto){
     <p class="muted">Also budget about 1% of the price a year for repairs and upkeep, roughly ${fmt$(o.price*0.01/12)} a month. It is not in the payment above.</p>`;
   const aff = A.hasInc ? `<h2>Can you afford it?</h2><table>${tr("Household income",fmt$(d.inc)+"/yr")}${tr("Other monthly debts",fmt$(d.debt))}
       ${tr("Housing cost vs. income (guide 28%)",pct(A.h,0),A.h<=0.28?"good":A.h<=0.36?"":"bad")}${tr("All debts vs. income (lenders often 43%)",pct(A.b,0),A.b<=0.36?"good":A.b<=0.43?"":"bad")}
-      ${tr("Comfortable price (28% / 36%)",fmt$(A.maxP))}</table><div class="sv ${A.cls==="v-good"?"ok":A.cls==="v-bad"?"bad":"mid"}" style="margin-top:5px">${A.msg}</div>`
+      ${tr("28%-guide price (28% / 36%)",fmt$(A.maxP))}</table><div class="sv ${A.cls==="v-good"?"ok":A.cls==="v-bad"?"bad":"mid"}" style="margin-top:5px">${A.msg}</div>`
     : `<h2>Can you afford it?</h2><p class="muted">No income was entered, so the payment is not compared with income. A common guide is to keep housing near 28% of gross income and all debts near 36%.</p>`;
   const dt = computeOwn(d,{taxMult:1.10}).total-o.total, di = computeOwn(d,{insMult:1.25}).total-o.total, dr = computeOwn(d,{rate:d.rate+1}).total-o.total;
   const whatif = `<h2>What if costs go up?</h2><table>${tr("Property tax rises 10%","+"+fmt$(dt)+"/mo","bad")}${tr("Insurance rises 25%","+"+fmt$(di)+"/mo","bad")}${tr("Rate 1 point higher at closing","+"+fmt$(dr)+"/mo","bad")}</table>
@@ -4143,7 +4144,7 @@ const DPA_N = ["Bergen","Essex","Hudson","Hunterdon","Mercer","Middlesex","Monmo
 function dpaTxt(county){ const a = DPA_N.includes(county) ? 15000 : 10000; return "up to "+fmt$(a)+", or "+fmt$(a+7000)+" if you are also a first-generation buyer; forgiven after 5 years in the home; income and price limits apply"; }
 function buyerRowHTML(r, i, b){
   const {c,d,o} = r, gross = b.inc/12, tags = [];
-  tags.push(r.st==="ok" ? `<span class="pill">Comfortable</span>` : `<span class="pill w" title="Housing would be over the usual 28% guide but within what many lenders accept.">A stretch</span>`);
+  tags.push(r.st==="ok" ? `<span class="pill">Within 28% guide</span>` : `<span class="pill w" title="Housing would be over the usual 28% guide but within what many lenders accept.">Above 28% guide</span>`);
   if (r.safe>=75) tags.push(`<span class="pill">Very safe</span>`); else if (r.safe<35) tags.push(`<span class="pill w">Higher crime</span>`);
   if (c.flood>=2) tags.push(`<span class="pill w">Flood risk</span>`);
   if (c.taxChg!=null && c.taxChg>5) tags.push(`<span class="pill w" title="Its tax rate rose ${c.taxChg}% from 2024 to 2025 (typical NJ town +2.8%).">Tax rate rising</span>`);
@@ -4152,7 +4153,7 @@ function buyerRowHTML(r, i, b){
     ...(b.price>0 ? [["Homes sold near "+fmtK(b.price)+" (±15%), share of recent sales", r.near ? nearTxt(r.near)+(r.near.sales ? "" : " · typical value "+fmtK(c.price)) : ""]] : []),
     [c.priceSrc==="sold" ? `Typical home price (median of ${c.soldN} recent sales)` : "Typical home value (Zillow)", fmt$(c.price)], ["1-year price change", (c.yoy>0?"+":"")+c.yoy+"%"],
     ...(sd ? [[`Recent sales in ${c.taxDistrict}, middle half (${sd.n} sold${sd.few?", few":""})`, soldRange(sd)],
-              ...(gross>0 ? [["Share of those sales under your comfortable price", soldShareTxt(soldShare(sd, maxP))]] : [])] : []),
+              ...(gross>0 ? [["Share of those sales under your 28%-guide price", soldShareTxt(soldShare(sd, maxP))]] : [])] : []),
     ["Monthly payment", fmt$(o.total)],
     ["  Mortgage (principal + interest)", fmt$(o.pi)], ["  Property tax", fmt$(o.tax)], ["  Insurance (estimate)", fmt$(o.ins)], ...(o.miOn ? [["  Mortgage insurance", fmt$(o.mi)]] : []),
     ["Cash to close (down + closing, estimate)", fmt$(o.cash0)],
@@ -4160,7 +4161,7 @@ function buyerRowHTML(r, i, b){
     ["  Inspections (home, radon, wood-destroying insect)", fmt$(o.ci.insp)], ["  Prepaids: first-year insurance, 2 months of tax, interest", fmt$(o.ci.prepaid)],
     ["NJHMFA down payment help, if you are a first-time buyer who qualifies", dpaTxt(c.county)],
     ["Property tax rate (2025)", c.tax+"% of price"+(c.taxChg!=null && c.taxChg>=-10 ? ` · ${c.taxChg>0?"+":""}${c.taxChg}% vs 2024` : "")],
-    ["Comfortable price here (28% / 36%)", fmt$(maxP)], ["Most a lender may allow here (36% / 43%)", fmt$(maxS)],
+    ["28%-guide price here (28% / 36%)", fmt$(maxP)], ["Most a lender may allow here (36% / 43%)", fmt$(maxS)],
     ...(c.cm ? [["Distance to Midtown · Newark Penn (straight line)", c.cm.nyc+" · "+c.cm.ewr+" mi"], ["Nearest train", c.cm.st+" ("+(SYSN[c.cm.sys]||"rail")+"), "+c.cm.stMi+" mi"]] : []),
     ["Safety score", Math.round(r.safe)+" of 100"], [c.schD ? "Schools ("+c.schD.name+" district)" : "Schools (county estimate)", (+c.sch).toFixed(1)+" of 10"]
   ].map(([k,v])=>`<span>${k.replace(/^ +/, "· ")}</span><span>${v}</span>`).join("");
@@ -4213,8 +4214,8 @@ function renderBuyer(){
   }
   if (shown.length){ sum.dataset.ok = nOk; sum.dataset.st = nSt; sum.dataset.pool = pool; sum.dataset.typ = Math.round(typical); sum.dataset.px = b.price>0 ? "1" : ""; } else { ["ok","st","pool","typ","px"].forEach(k=>delete sum.dataset[k]); }
   sum.innerHTML = `<div class="verdict ${nOk?"v-good":nSt?"v-ok":"v-bad"}">${
-    shown.length ? `<b>${nOk}</b> ZIP code${nOk===1?"":"s"} ${b.price>0 ? "where homes around "+fmtK(b.price)+" are selling fit comfortably" : "have a typical home that fits comfortably"}${nSt?`, and <b>${nSt}</b> more are a stretch`:""} (of ${pool} that pass your safety and flood filters). In a town with the middle NJ tax rate, a price near <b>${fmt$(typical)}</b> would be comfortable; higher-tax towns push that down.`
-    : `<b>No ZIP code fits</b> with these numbers${noCash?`, ${noCash} would fit your income but need more cash than you entered`:""}. A price near ${fmt$(typical)} would be comfortable in a town with the middle NJ tax rate. Try a bigger down payment, FHA or VA financing, a lower minimum safety score, or check homes priced below the typical value.`}</div>${cashLine}`;
+    shown.length ? `<b>${nOk}</b> ZIP code${nOk===1?"":"s"} ${b.price>0 ? "where homes around "+fmtK(b.price)+" are selling within the 28% guide" : "have a typical home within the 28% guide"}${nSt?`, and <b>${nSt}</b> more are above it`:""} (of ${pool} that pass your safety and flood filters). In a town with the middle NJ tax rate, a price near <b>${fmt$(typical)}</b> would fit the 28% guide; higher-tax towns push that down.`
+    : `<b>No ZIP code fits</b> with these numbers${noCash?`, ${noCash} would fit your income but need more cash than you entered`:""}. A price near ${fmt$(typical)} would fit the 28% guide in a town with the middle NJ tax rate. Try a bigger down payment, FHA or VA financing, a lower minimum safety score, or check homes priced below the typical value.`}</div>${cashLine}`;
   const n = Math.min(buyN, shown.length);
   list.innerHTML = shown.slice(0,n).map((r,i)=>buyerRowHTML(r,i,b)).join("");
   more.style.display = shown.length>n ? "" : "none"; more.textContent = `Show more (${shown.length-n} left)`;
@@ -4261,8 +4262,8 @@ function renderCmp(){
     ["1-year price change", r=>r.c.yoy, v=>(v>0?"+":"")+v+"%", 0],
     ["Monthly payment", r=>r.o.total, fmt$, -1],
     ...(hasInc ? [["Share of income", r=>r.h, v=>pct(v,0), -1],
-                  ["Fit for your income", r=>r.st, v=>({ok:"Comfortable",stretch:"A stretch",over:"Over lender limit"})[v], 0],
-                  ["Comfortable price here", r=>r.maxP, fmt$, 1],
+                  ["Fit for your income", r=>r.st, v=>({ok:"Within 28% guide",stretch:"Above 28% guide",over:"Above usual limits"})[v], 0],
+                  ["28%-guide price here", r=>r.maxP, fmt$, 1],
                   ["Most a lender may allow", r=>r.maxS, fmt$, 1]] : []),
     ["Cash to close", r=>r.o.cash0, fmt$, -1],
     ["Taxes", ],
@@ -4273,7 +4274,7 @@ function renderCmp(){
     ["Homes sold", r=>r.sd ? r.sd.n : null, v=>v.toLocaleString()+(v<30?" (few)":""), 0],
     ["Middle half of sale prices", r=>r.sd ? soldRange(r.sd) : null, v=>v, 0],
     ["Median sale price", r=>r.sd ? r.sd.p[2] : null, fmt$, 0],
-    ...(hasInc ? [["Share of sales under your comfortable price", r=>r.sd ? soldShare(r.sd, r.maxP) : null, v=>soldShareTxt(v), 1]] : []),
+    ...(hasInc ? [["Share of sales under your 28%-guide price", r=>r.sd ? soldShare(r.sd, r.maxP) : null, v=>soldShareTxt(v), 1]] : []),
     ["The place"],
     ["Safety score (of 100)", r=>Math.round(r.safe), v=>v, 1],
     ["Schools (district score, of 10)", r=>r.c.sch, v=>(+v).toFixed(1), 1],
@@ -4293,7 +4294,7 @@ function renderCmp(){
   if (open){
     const parts = [], tie = (get,dir,label,f)=>{ const n = cols.map(get).filter(v=>typeof v==="number"&&isFinite(v)); if (n.length<2 || Math.min(...n)===Math.max(...n)) return; const t = dir<0?Math.min(...n):Math.max(...n); const w = cols.filter(r=>get(r)===t); parts.push(`${label}: <b>${w.map(r=>r.c.area).join(" / ")}</b> (${f(t)})`); };
     tie(r=>r.o.total,-1,"Lowest monthly payment",fmt$); tie(r=>r.o.cash0,-1,"Least cash to close",fmt$);
-    tie(r=>r.safe,1,"Safest",v=>Math.round(v)+" of 100"); tie(r=>r.c.tax,-1,"Lowest tax rate",v=>v+"%");
+    tie(r=>r.safe,1,"Lowest reported crime",v=>Math.round(v)+" of 100"); tie(r=>r.c.tax,-1,"Lowest tax rate",v=>v+"%");
     sum = parts.length ? `<p class="cmpsum">${parts.join(" · ")}. A ✓ marks the best value in each row; there is no single winner, so weigh what matters most to you.</p>` : "";
   }
   box.innerHTML = `<div class="cmptray"><span class="lbl">Comparing</span>${CMP.map(z=>{ const c = ZIPP.find(p=>p.zip===z); return `<span class="cmpchip">${c.area} ${c.zip}<button type="button" data-cx="${z}" aria-label="Remove ${c.area} ${c.zip}">×</button></span>`; }).join("")}
@@ -4331,9 +4332,9 @@ function renderHeroBuyer(el){
   const rows = buyerRows(b).filter(r=>r.st==="ok" && r.safe>=35 && r.c.flood<2 && !AGE55[r.c.zip]);
   const seen = {}, top = rows.sort(BUY_SORT.liv).filter(r=>{ const k=r.c.area+"|"+r.c.county; if (seen[k]) return false; seen[k]=1; return true; }).slice(0,3);
   el.innerHTML = `<h2>Where a $120k income fits today</h2>
-    <p class="hc-sub">Typical home, 10% down, ${b.rate}% rate, safer areas. Best livability scores first.</p>
+    <p class="hc-sub">Typical home, 10% down, ${b.rate}% rate, areas with lower reported crime. Highest livability scores first.</p>
     ${top.map(r=>`<div class="hc-row"><div><b>${r.c.area} ${r.c.zip}</b><br><small>${r.c.county} Co. · ${fmtK(r.c.price)} typical</small></div><div class="cf">${fmt$(r.o.total)}/mo<small>${pct(r.h,0)} of income</small></div></div>`).join("")}
-    <div class="hc-foot"><b>${rows.length}</b> of ${ZIPP.length} ZIP codes fit comfortably at this income. <a role="button" tabindex="0" id="hcBuyGo">Use your own numbers →</a></div>`;
+    <div class="hc-foot"><b>${rows.length}</b> of ${ZIPP.length} ZIP codes are within the 28% guide at this income. <a role="button" tabindex="0" id="hcBuyGo">Use your own numbers →</a></div>`;
   const go = $("hcBuyGo"); if (go) go.onclick = ()=>{ const e=$("buyerCard"); if (e) e.scrollIntoView({behavior:"smooth",block:"start"}); const i=$("b-inc"); if (i) setTimeout(()=>i.focus({preventScroll:true}),400); };
 }
 function renderHero(){
